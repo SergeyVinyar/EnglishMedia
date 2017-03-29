@@ -1,0 +1,8 @@
+<resources>
+    <string name="all_app_name">English Media</string>
+
+    <string name="main_navigation_drawer_open">Open navigation drawer</string>
+    <string name="main_navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="main_action_settings">Settings</string>
+</resources>
