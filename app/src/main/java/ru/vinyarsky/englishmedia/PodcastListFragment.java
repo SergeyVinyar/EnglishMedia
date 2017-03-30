@@ -1,6 +1,8 @@
 package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.XmlResourceParser;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -8,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -45,6 +48,13 @@ public class PodcastListFragment extends Fragment implements ListView.OnItemClic
             data.add(Integer.toString(i));
         listView.setAdapter(new ArrayAdapter<String>(this.getContext(), android.R.layout.simple_list_item_1, data));
 
+//        try(XmlResourceParser parser = getResources().getXml(0)) {
+//
+//
+//        }
+
+
+
         return view;
     }
 
@@ -70,6 +80,11 @@ public class PodcastListFragment extends Fragment implements ListView.OnItemClic
         super.onDetach();
         mListener = null;
     }
+
+//    private class PodcastAdapter extends ListAdapter {
+//
+//    }
+
 
     public interface OnPodcastListFragmentListener {
         void onSelectPodcast(UUID podcastId);
