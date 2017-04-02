@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -68,8 +70,8 @@ public class PodcastListFragment extends Fragment {
 
                     @Override
                     public void bindView(View view, Context context, Cursor cursor) {
-                        ((EditText)view.findViewById(R.id.edittext_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
-                        ((EditText)view.findViewById(R.id.edittext_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
+                        ((TextView)view.findViewById(R.id.textview_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
+                        ((TextView)view.findViewById(R.id.textview_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
                         ((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageURI(Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
                     }
                 });

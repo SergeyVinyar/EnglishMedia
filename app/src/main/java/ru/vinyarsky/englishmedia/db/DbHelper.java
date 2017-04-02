@@ -86,12 +86,7 @@ public class DbHelper extends SQLiteOpenHelper {
                                     podcast.setRssUrl(value);
                                     break;
                                 case "image_src":
-                                    Uri.Builder b = new Uri.Builder();
-                                    b.scheme(ContentResolver.SCHEME_ANDROID_RESOURCE);
-                                    b.appendPath(appContext.getPackageName());
-                                    b.appendPath("raw");
-                                    b.appendPath(value);
-                                    podcast.setImagePath(b.build().toString());
+                                    podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value);
                                     break;
                             }
                             break;
