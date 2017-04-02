@@ -3,27 +3,37 @@ package ru.vinyarsky.englishmedia;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
+import java.io.PipedOutputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class PodcastListFragment extends Fragment implements ListView.OnItemClickListener {
+import io.reactivex.Observable;
+import ru.vinyarsky.englishmedia.db.DbHelper;
+import ru.vinyarsky.englishmedia.db.Podcast;
 
+public class PodcastListFragment extends Fragment {
 
     private OnPodcastListFragmentListener mListener;
 
     public PodcastListFragment() {
-        // Required empty public constructor
     }
 
     public static PodcastListFragment newInstance() {
@@ -40,28 +50,32 @@ public class PodcastListFragment extends Fragment implements ListView.OnItemClic
                              Bundle savedInstanceState) {
         View view =  inflater.inflate(R.layout.fragment_podcastlist, container, false);
 
-        ListView listView = (ListView) view.findViewById(R.id.listview_fragment_podcastlist);
-        listView.setOnItemClickListener(this);
+        ListView listView = (ListView)view.findViewById(R.id.listview_fragment_podcastlist);
+        listView.setOnItemClickListener((parent, clickedView, position, id) -> {
+            if (mListener != null)
+                mListener.onSelectPodcast(UUID.randomUUID());
+        });
 
-        List<String> data = new ArrayList<>(20);
-        for(int i = 0; i < 20; i++)
-            data.add(Integer.toString(i));
-        listView.setAdapter(new ArrayAdapter<String>(this.getContext(), android.R.layout.simple_list_item_1, data));
+        EMApplication app = (EMApplication)getActivity().getApplication();
+        Observable.fromFuture(Podcast.readAllAsync(app.getDbHelper()))
+            .subscribe((cursor) -> {
+                listView.setAdapter(new CursorAdapter(this.getContext(), cursor, false) {
 
-//        try(XmlResourceParser parser = getResources().getXml(0)) {
-//
-//
-//        }
+                    @Override
+                    public View newView(Context context, Cursor cursor, ViewGroup parent) {
+                        return ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.item_podcast, parent, false);
+                    }
 
-
+                    @Override
+                    public void bindView(View view, Context context, Cursor cursor) {
+                        ((EditText)view.findViewById(R.id.edittext_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
+                        ((EditText)view.findViewById(R.id.edittext_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
+                        ((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageURI(Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
+                    }
+                });
+            });
 
         return view;
-    }
-
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (mListener != null) {
-            mListener.onSelectPodcast(UUID.randomUUID());
-        }
     }
 
     @Override
@@ -70,8 +84,8 @@ public class PodcastListFragment extends Fragment implements ListView.OnItemClic
         if (context instanceof OnPodcastListFragmentListener) {
             mListener = (OnPodcastListFragmentListener) context;
         } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnFragmentInteractionListener");
+            throw new RuntimeException(context.toString()
+                    + " must implement " + OnPodcastListFragmentListener.class.getSimpleName());
         }
     }
 
@@ -81,12 +95,8 @@ public class PodcastListFragment extends Fragment implements ListView.OnItemClic
         mListener = null;
     }
 
-//    private class PodcastAdapter extends ListAdapter {
-//
-//    }
-
 
     public interface OnPodcastListFragmentListener {
-        void onSelectPodcast(UUID podcastId);
+        void onSelectPodcast(UUID podcastCode);
     }
 }

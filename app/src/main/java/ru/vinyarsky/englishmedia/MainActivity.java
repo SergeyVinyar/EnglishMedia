@@ -9,9 +9,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements
+            NavigationView.OnNavigationItemSelectedListener,
+            PodcastListFragment.OnPodcastListFragmentListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +25,7 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_layout_main_appbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawerlayout_main);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.main_navigation_drawer_open, R.string.main_navigation_drawer_close);
         drawer.addDrawerListener(toggle);
@@ -37,7 +42,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawerlayout_main);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -87,8 +92,13 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawerlayout_main);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onSelectPodcast(UUID podcastCode) {
+        Toast.makeText(this, podcastCode.toString(), Toast.LENGTH_LONG).show();
     }
 }

@@ -7,6 +7,8 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -18,17 +20,28 @@ import io.reactivex.subjects.ReplaySubject;
 
 public final class Podcast {
 
-    private static final String _ID = "_id";
-    private static final String CODE = "code";
-    private static final String LEVEL = "level";
-    private static final String TITLE = "title";
-    private static final String DESCRIPTION = "description";
-    private static final String IMAGE_PATH = "image_path";
-    private static final String RSS_URL = "rss_url";
-    private static final String SUBSCRIBED = "subscribed";
+    public static final String _ID = "_id";
+    public static final String CODE = "code";
+    public static final String LEVEL = "level";
+    public static final String TITLE = "title";
+    public static final String DESCRIPTION = "description";
+    public static final String IMAGE_PATH = "image_path";
+    public static final String RSS_URL = "rss_url";
+    public static final String SUBSCRIBED = "subscribed";
 
     private static String TABLE_NAME = "Podcasts";
 
+    private static final String SQL_CREATE_TABLE =
+            String.format("create table %s (", TABLE_NAME) +
+            String.format("  %s integer primary key autoincrement not null, ", _ID) +
+            String.format("  %s text not null, ", CODE) +
+            String.format("  %s integer not null, ", LEVEL) +
+            String.format("  %s text not null, ", TITLE) +
+            String.format("  %s text, ", DESCRIPTION) +
+            String.format("  %s text, ", IMAGE_PATH) +
+            String.format("  %s text not null, ", RSS_URL) +
+            String.format("  %s integer not null)", SUBSCRIBED);
+    private static final String SQL_SELECT_ALL = String.format("select * from %s", TABLE_NAME);
     private static final String SQL_SELECT_BY_ID = String.format("select * from %s where %s = ?0", TABLE_NAME, _ID);
 
     private long id;
@@ -44,104 +57,52 @@ public final class Podcast {
 
     }
 
-    @TargetApi(19)
-    public static Observable<Podcast> read(DbHelper dbHelper, int id) {
-        return Observable.fromCallable(() -> {
-            Podcast result = null;
-            try (SQLiteDatabase db = dbHelper.getReadableDatabase()) {
-                Cursor cursor = db.rawQuery(SQL_SELECT_BY_ID, new String[] { Integer.toString(id) });
-                try {
-                    cursor.moveToNext();
-                    if (cursor.getCount() == 1) {
-                        result = new Podcast();
-                        // TODO
-                    }
-                }
-                finally {
-                    cursor.close();
-                }
-            }
-            return result;
-        })
-        .subscribeOn(Schedulers.io())
-        .observeOn(AndroidSchedulers.mainThread());
+//    public static Observable<Podcast> read(DbHelper dbHelper, int id) {
+//        return Observable.fromCallable(() -> {
+//            Podcast result = null;
+//            try (SQLiteDatabase db = dbHelper.getReadableDatabase()) {
+//                Cursor cursor = db.rawQuery(SQL_SELECT_BY_ID, new String[] { Integer.toString(id) });
+//                try {
+//                    cursor.moveToNext();
+//                    if (cursor.getCount() == 1) {
+//                        result = new Podcast();
+//                        // TODO
+//                    }
+//                }
+//                finally {
+//                    cursor.close();
+//                }
+//            }
+//            return result;
+//        })
+//        .subscribeOn(Schedulers.io())
+//        .observeOn(AndroidSchedulers.mainThread());
+//    }
+
+
+    public static Future<Cursor> readAllAsync(DbHelper dbHelper) {
+        return dbHelper.getExecutor().submit(() -> {
+            return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
+        });
     }
 
-    @TargetApi(19)
-    public Observable<Void> write(DbHelper dbHelper) {
+    long write(SQLiteDatabase db) {
+        ContentValues vals = new ContentValues(8);
+        if (this.getId() != 0)
+            vals.put(_ID, this.getId());
+        vals.put(CODE, this.getCode().toString());
+        vals.put(LEVEL, this.getLevel().ordinal());
+        vals.put(TITLE, this.getTitle());
+        vals.put(DESCRIPTION, this.getDescription());
+        vals.put(IMAGE_PATH, this.getImagePath());
+        vals.put(RSS_URL, this.getRssUrl());
+        vals.put(SUBSCRIBED, this.isSubscribed());
+        this.id = db.insertOrThrow(TABLE_NAME, null, vals);
+        return this.id;
+    }
 
-        class Sub implements ObservableOnSubscribe<Void> {
-
-            private boolean completed = false;
-
-            private boolean failed = false;
-            private Throwable error;
-
-            private ObservableEmitter<Void> emitter;
-
-            @Override
-            public void subscribe(ObservableEmitter<Void> e) throws Exception {
-                if (completed)
-                    e.onComplete();
-                else if (failed)
-                    e.onError(error);
-                else
-                    this.emitter = e;
-            }
-
-            private void onComplete() {
-                if (emitter != null) {
-                    emitter.onComplete();
-                    emitter = null;
-                }
-                else {
-                    this.completed = true;
-                }
-            }
-
-            private void onError(Throwable error) {
-                if (emitter != null) {
-                    emitter.onError(error);
-                    emitter = null;
-                }
-                else {
-                    this.failed = true;
-                    this.error = error;
-                }
-            }
-        }
-
-        Sub sub = new Sub();
-
-        Observable.fromCallable(() -> {
-            try (SQLiteDatabase db = dbHelper.getWritableDatabase()) {
-                ContentValues vals = new ContentValues(7);
-                vals.put(_ID, this.getId());
-                vals.put(CODE, this.getCode().toString());
-                vals.put(LEVEL, this.getLevel().ordinal());
-                vals.put(DESCRIPTION, this.getDescription());
-                vals.put(IMAGE_PATH, this.getImagePath());
-                vals.put(RSS_URL, this.getRssUrl());
-                vals.put(SUBSCRIBED, this.isSubscribed());
-                try {
-                    this.id = db.insertOrThrow(TABLE_NAME, null, vals);
-                } catch (android.database.SQLException e) {
-                    return e;
-                }
-            }
-            return null;
-        })
-        .subscribeOn(Schedulers.io())
-        .subscribe((error) -> {
-            if (error == null)
-                sub.onComplete();
-            else
-                sub.onError(error);
-        });
-
-        return ReplaySubject.create(sub)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+    static void onCreate(SQLiteDatabase db) {
+        db.execSQL(SQL_CREATE_TABLE);
     }
 
     public long getId() {
