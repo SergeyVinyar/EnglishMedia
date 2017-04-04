@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
 
+        // TODO Check if fragment is already created
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.framelayout_layout_main_appbar_fragment, PodcastListFragment.newInstance())

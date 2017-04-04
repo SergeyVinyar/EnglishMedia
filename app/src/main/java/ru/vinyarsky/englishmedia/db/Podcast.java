@@ -81,7 +81,7 @@ public final class Podcast {
 
 
     public static Future<Cursor> readAllAsync(DbHelper dbHelper) {
-        return dbHelper.getExecutor().submit(() -> {
+        return dbHelper.getExecutorSupplier().get().submit(() -> {
             return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
         });
     }
