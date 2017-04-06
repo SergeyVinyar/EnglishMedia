@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.vinyarsky.englishmedia">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".EMApplication"
         android:allowBackup="true"
@@ -21,5 +23,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>

@@ -89,12 +89,12 @@ public class EpisodeListFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof OnPodcastListFragmentListener) {
-            mListener = (OnPodcastListFragmentListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement " + OnPodcastListFragmentListener.class.getSimpleName());
-        }
+//        if (context instanceof OnPodcastListFragmentListener) {
+//            mListener = (OnPodcastListFragmentListener) context;
+//        } else {
+//            throw new RuntimeException(context.toString()
+//                    + " must implement " + OnPodcastListFragmentListener.class.getSimpleName());
+//        }
     }
 
     @Override

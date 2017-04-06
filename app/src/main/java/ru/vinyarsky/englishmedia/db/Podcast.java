@@ -38,11 +38,11 @@ public final class Podcast {
             String.format(" %s text,", DESCRIPTION) +
             String.format(" %s text,", IMAGE_PATH) +
             String.format(" %s text not null,", RSS_URL) +
-            String.format(" %s integer not null,", SUBSCRIBED) +
+            String.format(" %s integer not null", SUBSCRIBED) +
             ")";
 
-    private static final String SQL_SELECT_ALL = String.format("select ROWID as _ID, * from %s", TABLE_NAME);
-    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _ID, * from %s where %s = ?0", TABLE_NAME, CODE);
+    private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
+    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
 
     private UUID code;
     private PodcastLevel level;

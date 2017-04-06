@@ -40,13 +40,13 @@ public final class Episode {
             String.format("  %s integer not null,", DURATION) +
             String.format("  %s integer,", PUB_DATE) +
             String.format("  %s integer not null,", STATUS) +
-            String.format("  %s integer not null,", TIME_ELAPSED) +
+            String.format("  %s integer not null", TIME_ELAPSED) +
             ")";
 
-    private static final String SQL_SELECT_ALL = String.format("select ROWID as _ID, * from %s", TABLE_NAME);
-    private static final String SQL_SELECT_BY_PODCAST_CODE = String.format("select ROWID as _ID, * from %s where %s = ?0", TABLE_NAME, PODCAST_CODE);
-    private static final String SQL_SELECT_BY_PODCAST_CODE_AND_GUID = String.format("select ROWID as _ID, * from %s where %s = ?0 and %s = ?1", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
-    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _ID, * from %s where %s = ?0", TABLE_NAME, CODE);
+    private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
+    private static final String SQL_SELECT_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, PODCAST_CODE);
+    private static final String SQL_SELECT_BY_PODCAST_CODE_AND_GUID = String.format("select ROWID as _id, * from %s where %s = ?1 and %s = ?2", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
+    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
 
     private UUID code;
     private UUID podcastCode;
@@ -56,6 +56,7 @@ public final class Episode {
     private String pageUrl;
     private String contentUrl;
     private String contentLocalPath;
+    private int fileSize;
     private int duration;
     private Date pubDate;
     private EpisodeStatus status;
@@ -125,6 +126,7 @@ public final class Episode {
             this.code = UUID.randomUUID();
 
         ContentValues vals = new ContentValues(11);
+        vals.put(CODE, this.getCode().toString());
         vals.put(PODCAST_CODE, this.getPodcastCode().toString());
         vals.put(EPISODE_GUID, this.getEpisodeGuid());
         vals.put(TITLE, this.getTitle());
@@ -134,7 +136,8 @@ public final class Episode {
         vals.put(CONTENT_LOCAL_PATH, this.getContentLocalPath());
         vals.put(DURATION, this.getDuration());
         vals.put(TIME_ELAPSED, this.getTimeElapsed());
-        vals.put(PUB_DATE, this.getPubDate().getTime());
+        if (this.getPubDate() != null)
+            vals.put(PUB_DATE, this.getPubDate().getTime());
         vals.put(STATUS, this.getStatus().ordinal());
         db.insertOrThrow(TABLE_NAME, null, vals);
 
@@ -235,6 +238,14 @@ public final class Episode {
 
     public void setStatus(EpisodeStatus status) {
         this.status = status;
+    }
+
+    public int getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(int fileSize) {
+        this.fileSize = fileSize;
     }
 
     public enum EpisodeStatus { NEW, LISTENING, COMPLETED }

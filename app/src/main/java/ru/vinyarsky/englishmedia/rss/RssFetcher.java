@@ -4,6 +4,8 @@ import android.util.Xml;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -50,6 +52,7 @@ public final class RssFetcher {
                         if (response.isSuccessful()) {
                             XmlPullParser parser = Xml.newPullParser();
                             parser.setInput(response.body().charStream());
+                            parser.next();
                             int count = processRss(parser, podcastCode);
                             parser.setInput(null); // Release internal structures
                             return count;
@@ -69,7 +72,7 @@ public final class RssFetcher {
     private int processRss(XmlPullParser parser, UUID podcastCode) {
         int count = 0;
         try {
-            parser.require(XmlPullParser.START_DOCUMENT, null, "rss");
+            parser.require(XmlPullParser.START_TAG, null, "rss");
             if (!"2.0".equals(parser.getAttributeValue(null, "version")))
                 throw new XmlPullParserException("rss version must be 2.0");
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
@@ -81,6 +84,7 @@ public final class RssFetcher {
                 if (episode.getEpisodeGuid() != null && episode.getContentUrl() != null) {
                     Episode dbEpisode = Episode.readByPodcastCodeAndGuid(this.dbHelperSupplier.get(), podcastCode, episode.getEpisodeGuid());
                     if (dbEpisode == null) {
+                        episode.setPodcastCode(podcastCode);
                         episode.write(this.dbHelperSupplier.get());
                     }
                     else {
@@ -106,37 +110,49 @@ public final class RssFetcher {
         parser.require(XmlPullParser.START_TAG, null, "item");
         Episode episode = new Episode();
         String currentTag = "";
-        while (parser.next() != XmlPullParser.END_TAG) {
-            switch (parser.getEventType()) {
-                case XmlPullParser.START_TAG:
-                    currentTag = parser.getName();
-                    if ("enclosure".equals(currentTag)) {
-                        episode.setContentUrl(parser.getAttributeValue(null, "url"));
-                    }
-                    break;
-                case XmlPullParser.TEXT:
-                    String value = parser.getText();
-                    switch (currentTag) {
-                        case "title":
-                            episode.setTitle(value);
-                            break;
-                        case "description":
-                            episode.setDescription(value);
-                            break;
-                        case "guid":
-                            episode.setEpisodeGuid(value);
-                            break;
-                        case "pubDate":
-                            episode.setPubDate(Date.valueOf(value));
-                            break;
-                        case "link":
-                            episode.setPageUrl(value);
-                            break;
-                        case "duration": // itunes:duration
-                            episode.setDuration(Integer.valueOf(value));
-                            break;
-                    }
-                    break;
+        SimpleDateFormat dateFormatYYYY = new SimpleDateFormat("EEE, dd mm yyyy HH:mm:ss zzz"); // TODO
+        SimpleDateFormat dateFormatYY = new SimpleDateFormat("EEE, dd mm yy HH:mm:ss zzz");
+        while (!(parser.next() == XmlPullParser.END_TAG && "item".equals(parser.getName()))) {
+            int eventType = parser.getEventType();
+            if (eventType == XmlPullParser.START_TAG) {
+                currentTag = parser.getName();
+                if ("enclosure".equals(currentTag)) {
+                    episode.setContentUrl(parser.getAttributeValue(null, "url"));
+                    episode.setFileSize(Integer.parseInt(parser.getAttributeValue(null, "length")));
+                }
+            }
+            else if (eventType == XmlPullParser.TEXT) {
+                String value = parser.getText();
+                switch (currentTag) {
+                    case "title":
+                        episode.setTitle(value);
+                        break;
+                    case "description":
+                        episode.setDescription(value);
+                        break;
+                    case "guid":
+                        episode.setEpisodeGuid(value);
+                        break;
+                    case "pubDate":
+                        try {
+                            episode.setPubDate(dateFormatYYYY.parse(value));
+                        }
+                        catch (ParseException e1) {
+                            try {
+                                episode.setPubDate(dateFormatYY.parse(value));
+                            }
+                            catch (ParseException e2) {
+                                // Do nothing, date is not important
+                            }
+                        }
+                        break;
+                    case "link":
+                        episode.setPageUrl(value);
+                        break;
+                    case "duration": // itunes:duration
+                        episode.setDuration(Integer.valueOf(value));
+                        break;
+                }
             }
         }
         return episode;

@@ -59,8 +59,11 @@ public class PodcastListFragment extends Fragment {
 
         ListView listView = (ListView)view.findViewById(R.id.listview_fragment_podcastlist);
         listView.setOnItemClickListener((parent, clickedView, position, id) -> {
-            if (mListener != null)
-                mListener.onSelectPodcast(UUID.randomUUID()); // TODO
+            if (mListener != null) {
+                Cursor cursor = (Cursor) parent.getItemAtPosition(position);
+                UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Podcast.CODE)));
+                mListener.onSelectPodcast(code);
+            }
         });
 
         EMApplication app = (EMApplication)getActivity().getApplication();
@@ -83,7 +86,7 @@ public class PodcastListFragment extends Fragment {
                         public void bindView(View view, Context context, Cursor cursor) {
                             ((TextView)view.findViewById(R.id.textview_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
                             ((TextView)view.findViewById(R.id.textview_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
-                            ((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageURI(Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
+                            //((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageURI(Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
                         }
                     });
                 });
