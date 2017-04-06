@@ -109,6 +109,24 @@ public class DbHelper extends SQLiteOpenHelper {
         }
     }
 
+    /**
+     * Use {@link DbHelper#getDatabase()} instead
+     */
+    @Deprecated
+    @Override
+    public SQLiteDatabase getReadableDatabase() {
+        return super.getReadableDatabase();
+    }
+
+    /**
+     * Use {@link DbHelper#getDatabase()} instead
+     */
+    @Deprecated
+    @Override
+    public SQLiteDatabase getWritableDatabase() {
+        return super.getWritableDatabase();
+    }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // do nothing

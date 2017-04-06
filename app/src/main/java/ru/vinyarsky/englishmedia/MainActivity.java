@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import java.util.UUID;
 
+import ru.vinyarsky.englishmedia.db.Episode;
+
 public class MainActivity extends AppCompatActivity
         implements
             NavigationView.OnNavigationItemSelectedListener,
@@ -100,6 +102,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
-        Toast.makeText(this, podcastCode.toString(), Toast.LENGTH_LONG).show();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.framelayout_layout_main_appbar_fragment, EpisodeListFragment.newInstance(podcastCode))
+                .addToBackStack(null)
+                .commit();
     }
 }

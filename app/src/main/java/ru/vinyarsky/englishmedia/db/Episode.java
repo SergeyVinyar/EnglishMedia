@@ -43,6 +43,7 @@ public final class Episode {
             String.format("  %s integer not null)", STATUS);
     private static final String SQL_SELECT_ALL = String.format("select * from %s", TABLE_NAME);
     private static final String SQL_SELECT_BY_PODCAST_CODE = String.format("select * from %s where %s = ?0", TABLE_NAME, PODCAST_CODE);
+    private static final String SQL_SELECT_BY_PODCAST_CODE_AND_GUID = String.format("select * from %s where %s = ?0 and %s = ?1", TABLE_NAME, PODCAST_CODE, GUID);
 
     private long id;
     private UUID podcastCode;
@@ -57,8 +58,29 @@ public final class Episode {
     private Date pubDate;
     private EpisodeStatus status;
 
+    /**
+     * Create new item
+     */
     public Episode() {
+    }
 
+    /**
+     * Instantiate existed item (from current cursor position)
+     */
+    private Episode(Cursor cursor) {
+        this();
+        this.id = cursor.getInt(cursor.getColumnIndex(_ID));
+        this.setPodcastCode(UUID.fromString(cursor.getString(cursor.getColumnIndex(PODCAST_CODE))));
+        this.setGuid(cursor.getString(cursor.getColumnIndex(GUID)));
+        this.setTitle(cursor.getString(cursor.getColumnIndex(TITLE)));
+        this.setDescription(cursor.getString(cursor.getColumnIndex(DESCRIPTION)));
+        this.setPageUrl(cursor.getString(cursor.getColumnIndex(PAGE_URL)));
+        this.setContentUrl(cursor.getString(cursor.getColumnIndex(CONTENT_URL)));
+        this.setContentPath(cursor.getString(cursor.getColumnIndex(CONTENT_PATH)));
+        this.setDuration(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DURATION))));
+        this.setTimeElapsed(Integer.parseInt(cursor.getString(cursor.getColumnIndex(TIME_ELAPSED))));
+        this.setPubDate(new Date(cursor.getString(cursor.getColumnIndex(PUB_DATE))));
+        this.setStatus(EpisodeStatus.valueOf(cursor.getString(cursor.getColumnIndex(STATUS))));
     }
 
     public static Future<Cursor> readAllAsync(DbHelper dbHelper) {
@@ -67,10 +89,23 @@ public final class Episode {
         });
     }
 
-    public static Future<Cursor> readByPodcastCodeAsync(DbHelper dbHelper, String podcastCode) {
+    public static Future<Cursor> readAllByPodcastCodeAsync(DbHelper dbHelper, UUID podcastCode) {
         return dbHelper.getExecutorSupplier().get().submit(() -> {
-            return dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_PODCAST_CODE, new String[] { podcastCode });
+            return dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_PODCAST_CODE, new String[] { podcastCode.toString() });
         });
+    }
+
+    public static Episode read(DbHelper dbHelper, UUID podcastCode, String guid) {
+        Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_PODCAST_CODE_AND_GUID, new String[] { podcastCode.toString(), guid });
+        cursor.moveToNext();
+        if (cursor.getCount() > 0)
+            return new Episode(cursor);
+        else
+            return null;
+    }
+
+    public long write(DbHelper dbHelper) {
+        return this.write(dbHelper.getDatabase());
     }
 
     long write(SQLiteDatabase db) {

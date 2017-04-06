@@ -33,13 +33,13 @@ public final class Podcast {
 
     private static final String SQL_CREATE_TABLE =
             String.format("create table %s (", TABLE_NAME) +
-            String.format("  %s integer primary key autoincrement not null, ", _ID) +
-            String.format("  %s text not null, ", CODE) +
-            String.format("  %s integer not null, ", LEVEL) +
-            String.format("  %s text not null, ", TITLE) +
-            String.format("  %s text, ", DESCRIPTION) +
-            String.format("  %s text, ", IMAGE_PATH) +
-            String.format("  %s text not null, ", RSS_URL) +
+            String.format("  %s integer primary key autoincrement not null,", _ID) +
+            String.format("  %s text not null,", CODE) +
+            String.format("  %s text not null,", LEVEL) +
+            String.format("  %s text not null,", TITLE) +
+            String.format("  %s text,", DESCRIPTION) +
+            String.format("  %s text,", IMAGE_PATH) +
+            String.format("  %s text not null,", RSS_URL) +
             String.format("  %s integer not null)", SUBSCRIBED);
     private static final String SQL_SELECT_ALL = String.format("select * from %s", TABLE_NAME);
     private static final String SQL_SELECT_BY_ID = String.format("select * from %s where %s = ?0", TABLE_NAME, _ID);
@@ -53,37 +53,51 @@ public final class Podcast {
     private String rssUrl;
     private boolean subscribed;
 
+    /**
+     * Create new item
+     */
     public Podcast() {
-
     }
 
-//    public static Observable<Podcast> read(DbHelper dbHelper, int id) {
-//        return Observable.fromCallable(() -> {
-//            Podcast result = null;
-//            try (SQLiteDatabase db = dbHelper.getReadableDatabase()) {
-//                Cursor cursor = db.rawQuery(SQL_SELECT_BY_ID, new String[] { Integer.toString(id) });
-//                try {
-//                    cursor.moveToNext();
-//                    if (cursor.getCount() == 1) {
-//                        result = new Podcast();
-//                        // TODO
-//                    }
-//                }
-//                finally {
-//                    cursor.close();
-//                }
-//            }
-//            return result;
-//        })
-//        .subscribeOn(Schedulers.io())
-//        .observeOn(AndroidSchedulers.mainThread());
-//    }
+    /**
+     * Instantiate existed item (from current cursor position)
+     */
+    private Podcast(Cursor cursor) {
+        this();
+        this.id = cursor.getInt(cursor.getColumnIndex(_ID));
+        this.setCode(UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE))));
+        this.setLevel(PodcastLevel.valueOf(cursor.getString(cursor.getColumnIndex(LEVEL))));
+        this.setTitle(cursor.getString(cursor.getColumnIndex(TITLE)));
+        this.setDescription(cursor.getString(cursor.getColumnIndex(DESCRIPTION)));
+        this.setImagePath(cursor.getString(cursor.getColumnIndex(IMAGE_PATH)));
+        this.setRssUrl(cursor.getString(cursor.getColumnIndex(RSS_URL)));
+        this.setSubscribed(cursor.getInt(cursor.getColumnIndex(SUBSCRIBED)) != 0);
+    }
 
+    /**
+     * [Sync] Returns Podcast item by Id
+     * @return null if not found
+     */
+    public static Podcast readById(DbHelper dbHelper, long id) {
+        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_ID, new String[] { Long.toString(id) })) {
+            cursor.moveToNext();
+            if (cursor.getCount() > 0)
+                return new Podcast(cursor);
+            return null;
+        }
+    }
 
+    /**
+     * [Async] Returns all items
+     */
     public static Future<Cursor> readAllAsync(DbHelper dbHelper) {
         return dbHelper.getExecutorSupplier().get().submit(() -> {
             return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
         });
+    }
+
+    public long write(DbHelper dbHelper) {
+        return this.write(dbHelper.getDatabase());
     }
 
     long write(SQLiteDatabase db) {
@@ -91,12 +105,12 @@ public final class Podcast {
         if (this.getId() != 0)
             vals.put(_ID, this.getId());
         vals.put(CODE, this.getCode().toString());
-        vals.put(LEVEL, this.getLevel().ordinal());
+        vals.put(LEVEL, this.getLevel().name());
         vals.put(TITLE, this.getTitle());
         vals.put(DESCRIPTION, this.getDescription());
         vals.put(IMAGE_PATH, this.getImagePath());
         vals.put(RSS_URL, this.getRssUrl());
-        vals.put(SUBSCRIBED, this.isSubscribed());
+        vals.put(SUBSCRIBED, this.isSubscribed() ? 1 : 0);
         this.id = db.insertOrThrow(TABLE_NAME, null, vals);
         return this.id;
     }
@@ -107,10 +121,6 @@ public final class Podcast {
 
     public long getId() {
         return id;
-    }
-
-    private void setId(long id) {
-        this.id = id;
     }
 
     public UUID getCode() {
