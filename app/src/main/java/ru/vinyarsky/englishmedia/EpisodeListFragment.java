@@ -17,10 +17,13 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 import ru.vinyarsky.englishmedia.rss.RssFetcher;
@@ -60,15 +63,13 @@ public class EpisodeListFragment extends Fragment {
 
         EMApplication app = (EMApplication)getActivity().getApplication();
 
-        UUID code = UUID.fromString(getArguments().getString("podcastCode"));
-
-
-        Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Arrays.asList(0L)))
-                .flatMap((count) -> {
-                    return Observable.fromFuture(Episode.readAllByPodcastCodeAsync(app.getDbHelper(), code));
-                })
+        UUID podcastCode = UUID.fromString(getArguments().getString("podcastCode"));
+        Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                .subscribeOn(Schedulers.io())
+                .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((cursor) -> {
-                    listView.setAdapter(new CursorAdapter(this.getContext(), cursor, false) {
+                    listView.setAdapter(new CursorAdapter(getContext(), cursor, false) {
 
                         @Override
                         public View newView(Context context, Cursor cursor, ViewGroup parent) {

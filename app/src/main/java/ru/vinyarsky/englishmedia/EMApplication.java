@@ -12,7 +12,6 @@ import ru.vinyarsky.englishmedia.rss.RssFetcher;
 
 public final class EMApplication extends Application {
 
-    private ExecutorService executor;
     private OkHttpClient httpClient;
 
     private DbHelper dbHelper;
@@ -20,13 +19,13 @@ public final class EMApplication extends Application {
 
     public DbHelper getDbHelper() {
         if (dbHelper == null)
-            dbHelper = new DbHelper(getApplicationContext(), this::getExecutor);
+            dbHelper = new DbHelper(getApplicationContext());
         return dbHelper;
     }
 
     public RssFetcher getRssFetcher() {
         if (rssFetcher == null)
-            rssFetcher = new RssFetcher(getApplicationContext(), this::getDbHelper, this::getExecutor, this::getHttpClient);
+            rssFetcher = new RssFetcher(this::getDbHelper, this::getHttpClient);
         return rssFetcher;
     }
 
@@ -47,17 +46,9 @@ public final class EMApplication extends Application {
         ShutdownServices();
     }
 
-    private ExecutorService getExecutor() {
-        if (executor == null)
-            executor = Executors.newCachedThreadPool();
-        return executor;
-    }
-
     private OkHttpClient getHttpClient() {
         if (httpClient == null)
-            httpClient = new OkHttpClient.Builder()
-                    .dispatcher(new Dispatcher(this.getExecutor()))
-                    .build();
+            httpClient = new OkHttpClient();
         return httpClient;
     }
 
@@ -72,10 +63,6 @@ public final class EMApplication extends Application {
         }
         if (httpClient != null) {
             httpClient.connectionPool().evictAll();
-        }
-        if (executor != null) {
-            executor.shutdown();
-            executor = null;
         }
     }
 }

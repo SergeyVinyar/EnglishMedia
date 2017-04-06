@@ -26,13 +26,11 @@ public class DbHelper extends SQLiteOpenHelper {
     private static int DB_VERSION = 1;
 
     private Context appContext;
-    private Supplier<ExecutorService> executorSupplier;
     private SQLiteDatabase database;
 
-    public DbHelper(Context appContext, Supplier<ExecutorService> executorSupplier) {
+    public DbHelper(Context appContext) {
         super(appContext, "data", null, DB_VERSION);
         this.appContext = appContext;
-        this.executorSupplier = executorSupplier;
     }
 
     @Override
@@ -51,6 +49,7 @@ public class DbHelper extends SQLiteOpenHelper {
             try {
                 // Table creation
                 Podcast.onCreate(db);
+                Episode.onCreate(db);
 
                 // Populating database from xml/podcasts
                 Podcast podcast = null;
@@ -72,7 +71,7 @@ public class DbHelper extends SQLiteOpenHelper {
                                 String value = parser.getText();
                                 switch (lastTag) {
                                     case "code":
-                                        podcast.setCode(UUID.fromString(value));
+// TODO                                        podcast.setCode(UUID.fromString(value));
                                         break;
                                     case "level":
                                         podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
@@ -130,10 +129,6 @@ public class DbHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // do nothing
-    }
-
-    Supplier<ExecutorService> getExecutorSupplier() {
-        return this.executorSupplier;
     }
 
     SQLiteDatabase getDatabase() {

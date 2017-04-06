@@ -1,13 +1,11 @@
 package ru.vinyarsky.englishmedia.rss;
 
-import android.content.Context;
-import android.database.Cursor;
 import android.util.Xml;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -27,28 +25,23 @@ import ru.vinyarsky.englishmedia.db.Podcast;
 
 public final class RssFetcher {
 
-    private Context appContext;
     private Supplier<DbHelper> dbHelperSupplier;
-    private Supplier<ExecutorService> executorSupplier;
     private Supplier<OkHttpClient> httpClientSupplier;
 
-    public RssFetcher(Context appContext, Supplier<DbHelper> dbHelperSupplier, Supplier<ExecutorService> executorSupplier, Supplier<OkHttpClient> httpClientSupplier) {
-        this.appContext = appContext;
+    public RssFetcher(Supplier<DbHelper> dbHelperSupplier, Supplier<OkHttpClient> httpClientSupplier) {
         this.dbHelperSupplier = dbHelperSupplier;
-        this.executorSupplier = executorSupplier;
         this.httpClientSupplier = httpClientSupplier;
     }
 
     /**
-     * [Async] Fetches episodes from rss-feed and writes them to db
-     * @param podcastIds
+     * Fetches episodes from rss-feed and writes them to db
      * @return Total number of fetched episodes
      */
-    public Future<Integer> fetchEpisodesAsync(List<Long> podcastIds) {
-        return Observable.fromIterable(podcastIds)
-                .subscribeOn(Schedulers.from(this.executorSupplier.get()))
-                .map((podcastId) -> {
-                    Podcast podcast = Podcast.readById(this.dbHelperSupplier.get(), podcastId);
+    public Future<Integer> fetchEpisodesAsync(List<UUID> podcastCodes) {
+        return Observable.fromIterable(podcastCodes)
+                .subscribeOn(Schedulers.io())
+                .map((podcastCode) -> {
+                    Podcast podcast = Podcast.read(this.dbHelperSupplier.get(), podcastCode);
                     // TODO podcast == null
                     Request request = new Request.Builder()
                             .url(podcast.getRssUrl())
@@ -57,20 +50,9 @@ public final class RssFetcher {
                         if (response.isSuccessful()) {
                             XmlPullParser parser = Xml.newPullParser();
                             parser.setInput(response.body().charStream());
-                            List<Episode> episodes = parseRss(parser);
-                            for (Episode episode: episodes) {
-                                Episode episodeDb = Episode.read(this.dbHelperSupplier.get(), podcast.getCode(), episode.getGuid());
-                                if (episodeDb == null) {
-                                    episode.setPodcastCode(podcast.getCode());
-                                    episode.write(this.dbHelperSupplier.get());
-                                }
-                                else {
-                                    episodeDb.setTitle(episode.getTitle());
-                                    // TODO
-                                }
-                            }
+                            int count = processRss(parser, podcastCode);
                             parser.setInput(null); // Release internal structures
-                            return 1;
+                            return count;
                         }
                     }
                     return 0;
@@ -84,8 +66,8 @@ public final class RssFetcher {
      * https://cyber.harvard.edu/rss/rss.html
      * @implNote Must be thread-safe
      */
-    private List<Episode> parseRss(XmlPullParser parser) {
-        List<Episode> episodes = new ArrayList<>();
+    private int processRss(XmlPullParser parser, UUID podcastCode) {
+        int count = 0;
         try {
             parser.require(XmlPullParser.START_DOCUMENT, null, "rss");
             if (!"2.0".equals(parser.getAttributeValue(null, "version")))
@@ -96,14 +78,28 @@ public final class RssFetcher {
                 if (!"item".equals(parser.getName()))
                     continue;
                 Episode episode = parseRssItem(parser);
-                if (episode.getGuid() != null && episode.getContentUrl() != null)
-                    episodes.add(episode);
+                if (episode.getEpisodeGuid() != null && episode.getContentUrl() != null) {
+                    Episode dbEpisode = Episode.readByPodcastCodeAndGuid(this.dbHelperSupplier.get(), podcastCode, episode.getEpisodeGuid());
+                    if (dbEpisode == null) {
+                        episode.write(this.dbHelperSupplier.get());
+                    }
+                    else {
+                        dbEpisode.setTitle(episode.getTitle());
+                        dbEpisode.setDescription(episode.getDescription());
+                        dbEpisode.setPageUrl(episode.getPageUrl());
+                        dbEpisode.setContentUrl(episode.getContentUrl());
+                        dbEpisode.setContentLocalPath(episode.getContentLocalPath());
+                        dbEpisode.setDuration(episode.getDuration());
+                        dbEpisode.setPubDate(episode.getPubDate());
+                        dbEpisode.write(this.dbHelperSupplier.get());
+                    }
+                    count++;
+                }
             }
-
         } catch (XmlPullParserException | IOException e) {
             // TODO
         }
-        return episodes;
+        return count;
     }
 
     private Episode parseRssItem(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -128,7 +124,7 @@ public final class RssFetcher {
                             episode.setDescription(value);
                             break;
                         case "guid":
-                            episode.setGuid(value);
+                            episode.setEpisodeGuid(value);
                             break;
                         case "pubDate":
                             episode.setPubDate(Date.valueOf(value));
