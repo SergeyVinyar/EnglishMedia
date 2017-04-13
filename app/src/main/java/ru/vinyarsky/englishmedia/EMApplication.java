@@ -2,13 +2,9 @@ package ru.vinyarsky.englishmedia;
 
 import android.app.Application;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import ru.vinyarsky.englishmedia.db.DbHelper;
-import ru.vinyarsky.englishmedia.rss.RssFetcher;
+import ru.vinyarsky.englishmedia.media.RssFetcher;
 
 public final class EMApplication extends Application {
 
@@ -46,7 +42,7 @@ public final class EMApplication extends Application {
         ShutdownServices();
     }
 
-    private OkHttpClient getHttpClient() {
+    public OkHttpClient getHttpClient() {
         if (httpClient == null)
             httpClient = new OkHttpClient();
         return httpClient;

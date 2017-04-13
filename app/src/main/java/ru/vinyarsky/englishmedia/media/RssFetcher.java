@@ -1,14 +1,14 @@
-package ru.vinyarsky.englishmedia.rss;
+package ru.vinyarsky.englishmedia.media;
 
 import android.util.Xml;
 
 import java.io.IOException;
-import java.sql.Date;
+import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import com.annimon.stream.function.Supplier;
@@ -82,22 +82,17 @@ public final class RssFetcher {
                     continue;
                 Episode episode = parseRssItem(parser);
                 if (episode.getEpisodeGuid() != null && episode.getContentUrl() != null) {
-                    Episode dbEpisode = Episode.readByPodcastCodeAndGuid(this.dbHelperSupplier.get(), podcastCode, episode.getEpisodeGuid());
-                    if (dbEpisode == null) {
+                    boolean alreadyInDb = Episode.existsByPodcastCodeAndGuid(this.dbHelperSupplier.get(), podcastCode, episode.getEpisodeGuid());
+                    if (!alreadyInDb) {
                         episode.setPodcastCode(podcastCode);
                         episode.write(this.dbHelperSupplier.get());
+                        count++;
                     }
                     else {
-                        dbEpisode.setTitle(episode.getTitle());
-                        dbEpisode.setDescription(episode.getDescription());
-                        dbEpisode.setPageUrl(episode.getPageUrl());
-                        dbEpisode.setContentUrl(episode.getContentUrl());
-                        dbEpisode.setContentLocalPath(episode.getContentLocalPath());
-                        dbEpisode.setDuration(episode.getDuration());
-                        dbEpisode.setPubDate(episode.getPubDate());
-                        dbEpisode.write(this.dbHelperSupplier.get());
+                        // Episodes are sorted in files by pubDate. As soon as we meet an episode
+                        // that is already saved, we can stop processing file.
+                        break;
                     }
-                    count++;
                 }
             }
         } catch (XmlPullParserException | IOException e) {
@@ -106,12 +101,15 @@ public final class RssFetcher {
         return count;
     }
 
+    /**
+     * @implNote Must be thread-safe
+     */
     private Episode parseRssItem(XmlPullParser parser) throws XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, null, "item");
         Episode episode = new Episode();
         String currentTag = "";
-        SimpleDateFormat dateFormatYYYY = new SimpleDateFormat("EEE, dd mm yyyy HH:mm:ss zzz"); // TODO
-        SimpleDateFormat dateFormatYY = new SimpleDateFormat("EEE, dd mm yy HH:mm:ss zzz");
+        SimpleDateFormat dateFormatYYYY = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.US);
+        SimpleDateFormat dateFormatYY = new SimpleDateFormat("E, dd MMM yy HH:mm:ss z", Locale.US);
         while (!(parser.next() == XmlPullParser.END_TAG && "item".equals(parser.getName()))) {
             int eventType = parser.getEventType();
             if (eventType == XmlPullParser.START_TAG) {
@@ -142,7 +140,7 @@ public final class RssFetcher {
                                 episode.setPubDate(dateFormatYY.parse(value));
                             }
                             catch (ParseException e2) {
-                                // Do nothing, date is not important
+                                episode.setPubDate(new Date());
                             }
                         }
                         break;

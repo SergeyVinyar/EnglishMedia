@@ -2,31 +2,22 @@ package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.icu.util.BuddhistCalendar;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
-import ru.vinyarsky.englishmedia.db.Podcast;
-import ru.vinyarsky.englishmedia.rss.RssFetcher;
 
 public class EpisodeListFragment extends Fragment {
 

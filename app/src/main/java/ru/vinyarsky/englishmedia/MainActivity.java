@@ -1,6 +1,12 @@
 package ru.vinyarsky.englishmedia;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -9,16 +15,38 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+
+import com.google.android.exoplayer2.ui.PlaybackControlView;
 
 import java.util.UUID;
 
-import ru.vinyarsky.englishmedia.db.Episode;
+import ru.vinyarsky.englishmedia.media.MediaService;
 
 public class MainActivity extends AppCompatActivity
         implements
             NavigationView.OnNavigationItemSelectedListener,
             PodcastListFragment.OnPodcastListFragmentListener {
+
+    private ServiceConnection mediaServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MainActivity.this.mediaServiceBinder = (MediaService.MediaServiceBinder) service;
+
+            PlaybackControlView controlView = (PlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
+            MainActivity.this.mediaServiceBinder.mountPlaybackControlView(controlView);
+            controlView.setShowTimeoutMs(-1);
+            controlView.show();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            PlaybackControlView controlView = (PlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
+            MainActivity.this.mediaServiceBinder.unMountPlaybackControlView(controlView);
+
+            MainActivity.this.mediaServiceBinder = null;
+        }
+    };
+    private MediaService.MediaServiceBinder mediaServiceBinder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +69,18 @@ public class MainActivity extends AppCompatActivity
                 .beginTransaction()
                 .add(R.id.framelayout_layout_main_appbar_fragment, PodcastListFragment.newInstance())
                 .commit();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        bindService(new Intent(this, MediaService.class), this.mediaServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unbindService(this.mediaServiceConnection);
     }
 
     @Override
@@ -102,10 +142,13 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.framelayout_layout_main_appbar_fragment, EpisodeListFragment.newInstance(podcastCode))
-                .addToBackStack(null)
-                .commit();
+        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse("http://open.live.bbc.co.uk/mediaselector/5/redir/version/2.0/mediaset/audio-nondrm-download-low/proto/http/vpid/p04z6zdy.mp3"));
+        startService(intent);
+
+//        getSupportFragmentManager()
+//                .beginTransaction()
+//                .add(R.id.framelayout_layout_main_appbar_fragment, EpisodeListFragment.newInstance(podcastCode))
+//                .addToBackStack(null)
+//                .commit();
     }
 }

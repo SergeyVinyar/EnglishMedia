@@ -45,7 +45,7 @@ public final class Episode {
 
     private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
     private static final String SQL_SELECT_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, PODCAST_CODE);
-    private static final String SQL_SELECT_BY_PODCAST_CODE_AND_GUID = String.format("select ROWID as _id, * from %s where %s = ?1 and %s = ?2", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
+    private static final String SQL_EXISTS_BY_PODCAST_CODE_AND_GUID = String.format("select exists(select 1 from %s where %s = ?1 and %s = ?2)", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
     private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
 
     private UUID code;
@@ -107,13 +107,10 @@ public final class Episode {
         }
     }
 
-    public static Episode readByPodcastCodeAndGuid(DbHelper dbHelper, UUID podcastCode, String episodeGuid) {
-        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_PODCAST_CODE_AND_GUID, new String[] { podcastCode.toString(), episodeGuid })) {
+    public static boolean existsByPodcastCodeAndGuid(DbHelper dbHelper, UUID podcastCode, String episodeGuid) {
+        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_EXISTS_BY_PODCAST_CODE_AND_GUID, new String[] { podcastCode.toString(), episodeGuid })) {
             cursor.moveToNext();
-            if (cursor.getCount() > 0)
-                return new Episode(cursor);
-            else
-                return null;
+            return cursor.getCount() > 0 && cursor.getInt(0) == 1;
         }
     }
 
