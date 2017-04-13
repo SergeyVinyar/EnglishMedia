@@ -6,8 +6,10 @@ import android.content.res.XmlResourceParser;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
@@ -21,11 +23,13 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.io.PipedOutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Exchanger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -86,7 +90,12 @@ public class PodcastListFragment extends Fragment {
                         public void bindView(View view, Context context, Cursor cursor) {
                             ((TextView)view.findViewById(R.id.textview_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
                             ((TextView)view.findViewById(R.id.textview_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
-                            //((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageURI(Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
+                            try {
+                                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
+                                ((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageBitmap(bitmap);
+                            } catch (IOException e) {
+                                // OK, no image then...
+                            }
                         }
                     });
                 });

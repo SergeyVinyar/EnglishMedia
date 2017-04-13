@@ -38,6 +38,8 @@ import ru.vinyarsky.englishmedia.EMApplication;
 public class MediaService extends Service implements ExoPlayer.EventListener {
 
     // TODO Add current position remembering
+    // TODO Foreground service
+    // TODO Downloading
 
     public static final String PLAY_ACTION = "ru.vinyarsky.englishmedia.action.play";
     public static final String DOWNLOAD_ACTION = "ru.vinyarsky.englishmedia.action.download";

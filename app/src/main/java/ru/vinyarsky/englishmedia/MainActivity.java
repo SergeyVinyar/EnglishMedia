@@ -142,8 +142,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
-        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse("http://open.live.bbc.co.uk/mediaselector/5/redir/version/2.0/mediaset/audio-nondrm-download-low/proto/http/vpid/p04z6zdy.mp3"));
-        startService(intent);
+//        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse("http://open.live.bbc.co.uk/mediaselector/5/redir/version/2.0/mediaset/audio-nondrm-download-low/proto/http/vpid/p04z6zdy.mp3"));
+//        startService(intent);
 
 //        getSupportFragmentManager()
 //                .beginTransaction()
