@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -25,7 +27,10 @@ import ru.vinyarsky.englishmedia.media.MediaService;
 public class MainActivity extends AppCompatActivity
         implements
             NavigationView.OnNavigationItemSelectedListener,
-            PodcastListFragment.OnPodcastListFragmentListener {
+            PodcastListFragment.OnPodcastListFragmentListener,
+            EpisodeListFragment.OnEpisodeListFragmentListener {
+
+    private Fragment currentFragment;
 
     private ServiceConnection mediaServiceConnection = new ServiceConnection() {
         @Override
@@ -64,11 +69,13 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // TODO Check if fragment is already created
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.framelayout_layout_main_appbar_fragment, PodcastListFragment.newInstance())
-                .commit();
+        if (currentFragment == null) {
+            currentFragment = PodcastListFragment.newInstance();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.framelayout_layout_main_appbar_fragment, currentFragment)
+                    .commit();
+        }
     }
 
     @Override
@@ -142,13 +149,25 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
-//        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse("http://open.live.bbc.co.uk/mediaselector/5/redir/version/2.0/mediaset/audio-nondrm-download-low/proto/http/vpid/p04z6zdy.mp3"));
-//        startService(intent);
+        Fragment oldFragment = this.currentFragment;
+        Fragment newFragment = EpisodeListFragment.newInstance(podcastCode);
 
-//        getSupportFragmentManager()
-//                .beginTransaction()
-//                .add(R.id.framelayout_layout_main_appbar_fragment, EpisodeListFragment.newInstance(podcastCode))
-//                .addToBackStack(null)
-//                .commit();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        if (oldFragment != null)
+            transaction.remove(oldFragment);
+
+        transaction
+                .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
+                .addToBackStack(null)
+                .commit();
+
+        this.currentFragment = newFragment;
+    }
+
+    @Override
+    public void onPlayEpisode(UUID podcastCode, String url) {
+        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse(url));
+        startService(intent);
     }
 }

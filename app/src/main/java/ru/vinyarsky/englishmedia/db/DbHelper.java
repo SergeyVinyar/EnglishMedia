@@ -67,30 +67,35 @@ public class DbHelper extends SQLiteOpenHelper {
                                     podcast.setSubscribed(false);
                                 }
                                 break;
+                            case XmlPullParser.END_TAG:
+                                lastTag = "";
+                                break;
                             case XmlPullParser.TEXT:
-                                String value = parser.getText();
-                                switch (lastTag) {
-                                    case "code":
-// TODO                                        podcast.setCode(UUID.fromString(value));
-                                        break;
-                                    case "country":
-                                        podcast.setCountry(Podcast.Country.valueOf(value));
-                                        break;
-                                    case "level":
-                                        podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
-                                        break;
-                                    case "title":
-                                        podcast.setTitle(value);
-                                        break;
-                                    case "description":
-                                        podcast.setDescription(value);
-                                        break;
-                                    case "rss_url":
-                                        podcast.setRssUrl(value);
-                                        break;
-                                    case "image_src":
-                                        podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value);
-                                        break;
+                                if (!"".equals(lastTag)) {
+                                    String value = parser.getText();
+                                    switch (lastTag) {
+                                        case "code":
+                                            podcast.setCode(UUID.fromString(value));
+                                            break;
+                                        case "country":
+                                            podcast.setCountry(Podcast.Country.valueOf(value));
+                                            break;
+                                        case "level":
+                                            podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
+                                            break;
+                                        case "title":
+                                            podcast.setTitle(value);
+                                            break;
+                                        case "description":
+                                            podcast.setDescription(value);
+                                            break;
+                                        case "rss_url":
+                                            podcast.setRssUrl(value);
+                                            break;
+                                        case "image_src":
+                                            podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value);
+                                            break;
+                                    }
                                 }
                                 break;
                         }

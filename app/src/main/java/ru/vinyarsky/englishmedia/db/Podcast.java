@@ -123,6 +123,10 @@ public final class Podcast {
         db.execSQL(SQL_CREATE_TABLE);
     }
 
+    /* package */ void setCode(UUID code) {
+        this.code = code;
+    }
+
     public UUID getCode() {
         return code;
     }

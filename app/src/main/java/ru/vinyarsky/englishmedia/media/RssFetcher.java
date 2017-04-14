@@ -119,7 +119,10 @@ public final class RssFetcher {
                     episode.setFileSize(Integer.parseInt(parser.getAttributeValue(null, "length")));
                 }
             }
-            else if (eventType == XmlPullParser.TEXT) {
+            else if (eventType == XmlPullParser.END_TAG) {
+                currentTag = "";
+            }
+            else if (eventType == XmlPullParser.TEXT && !"".equals(currentTag)) {
                 String value = parser.getText();
                 switch (currentTag) {
                     case "title":
