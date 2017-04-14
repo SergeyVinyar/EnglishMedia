@@ -21,6 +21,7 @@ import io.reactivex.subjects.ReplaySubject;
 public final class Podcast {
 
     public static final String CODE = "code";
+    public static final String COUNTRY = "country";
     public static final String LEVEL = "level";
     public static final String TITLE = "title";
     public static final String DESCRIPTION = "description";
@@ -33,6 +34,7 @@ public final class Podcast {
     private static final String SQL_CREATE_TABLE =
             String.format("create table %s (", TABLE_NAME) +
             String.format(" %s text primary key not null,", CODE) +
+            String.format(" %s text,", COUNTRY) +
             String.format(" %s text not null,", LEVEL) +
             String.format(" %s text not null,", TITLE) +
             String.format(" %s text,", DESCRIPTION) +
@@ -45,6 +47,7 @@ public final class Podcast {
     private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
 
     private UUID code;
+    private Country country;
     private PodcastLevel level;
     private String title;
     private String description;
@@ -65,6 +68,7 @@ public final class Podcast {
     private Podcast(Cursor cursor) {
         this();
         this.code = UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE)));
+        this.setCountry(Country.valueOf(cursor.getString(cursor.getColumnIndex(COUNTRY))));
         this.setLevel(PodcastLevel.valueOf(cursor.getString(cursor.getColumnIndex(LEVEL))));
         this.setTitle(cursor.getString(cursor.getColumnIndex(TITLE)));
         this.setDescription(cursor.getString(cursor.getColumnIndex(DESCRIPTION)));
@@ -103,6 +107,7 @@ public final class Podcast {
 
         ContentValues vals = new ContentValues(7);
         vals.put(CODE, this.getCode().toString());
+        vals.put(COUNTRY, this.getCountry().name());
         vals.put(LEVEL, this.getLevel().name());
         vals.put(TITLE, this.getTitle());
         vals.put(DESCRIPTION, this.getDescription());
@@ -170,5 +175,15 @@ public final class Podcast {
         this.subscribed = subscribed;
     }
 
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+
     public enum PodcastLevel { BEGINNER, INTERMEDIATE, ADVANCED }
+
+    public enum Country { NONE, UK, USA }
 }

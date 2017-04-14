@@ -88,8 +88,46 @@ public class PodcastListFragment extends Fragment {
 
                         @Override
                         public void bindView(View view, Context context, Cursor cursor) {
+                            ImageView flagView = ((ImageView)view.findViewById(R.id.imageView_item_podcast_flag));
+                            Podcast.Country country = Podcast.Country.valueOf(cursor.getString(cursor.getColumnIndex(Podcast.COUNTRY)));
+                            switch (country) {
+                                case UK:
+                                    flagView.setVisibility(View.VISIBLE);
+                                    flagView.setImageResource(R.drawable.flag_uk);
+                                    break;
+                                case USA:
+                                    flagView.setVisibility(View.VISIBLE);
+                                    flagView.setImageResource(R.drawable.flag_usa);
+                                    break;
+                                default:
+                                    flagView.setVisibility(View.INVISIBLE);
+                                    break;
+                            }
+
+                            View subscribedView = view.findViewById(R.id.textview_item_podcast_subscribed);
+                            if (cursor.getInt(cursor.getColumnIndex(Podcast.SUBSCRIBED)) != 0)
+                                subscribedView.setVisibility(View.VISIBLE);
+                            else
+                                subscribedView.setVisibility(View.INVISIBLE);
+
+                            TextView levelView = ((TextView)view.findViewById(R.id.textview_item_podcast_level));
+                            Podcast.PodcastLevel level = Podcast.PodcastLevel.valueOf(cursor.getString(cursor.getColumnIndex(Podcast.LEVEL)));
+                            levelView.setText(level.toString());
+                            switch (level) {
+                                case BEGINNER:
+                                    levelView.setTextColor(getResources().getColor(R.color.beginner));
+                                    break;
+                                case INTERMEDIATE:
+                                    levelView.setTextColor(getResources().getColor(R.color.intermediate));
+                                    break;
+                                case ADVANCED:
+                                    levelView.setTextColor(getResources().getColor(R.color.advanced));
+                                    break;
+                            }
+
                             ((TextView)view.findViewById(R.id.textview_item_podcast_title)).setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
                             ((TextView)view.findViewById(R.id.textview_item_podcast_description)).setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
+
                             try {
                                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
                                 ((ImageView)view.findViewById(R.id.imageview_item_podcast)).setImageBitmap(bitmap);

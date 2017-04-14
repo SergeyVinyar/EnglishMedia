@@ -73,6 +73,9 @@ public class DbHelper extends SQLiteOpenHelper {
                                     case "code":
 // TODO                                        podcast.setCode(UUID.fromString(value));
                                         break;
+                                    case "country":
+                                        podcast.setCountry(Podcast.Country.valueOf(value));
+                                        break;
                                     case "level":
                                         podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
                                         break;

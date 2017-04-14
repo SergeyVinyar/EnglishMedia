@@ -16,11 +16,11 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Light.SearchResult.Title"
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@+id/guideline"
+        app:layout_constraintRight_toLeftOf="@+id/guideline_item_podcast_middle"
         tools:layout_editor_absoluteY="210dp" />
 
     <android.support.constraint.Guideline
-        android:id="@+id/guideline"
+        android:id="@+id/guideline_item_podcast_middle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -29,7 +29,7 @@
     <android.support.constraint.Guideline
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/guideline4"
+        android:id="@+id/guideline_item_podcast_right"
         android:orientation="vertical"
         app:layout_constraintGuide_end="16dp" />
 

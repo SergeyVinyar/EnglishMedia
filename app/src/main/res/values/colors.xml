@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#688bc2</color>
     <color name="colorAccent">#FF4081</color>
     <color name="windowBackground">#f4f4f4</color>
+
+    <color name="beginner">#7aad3f</color>
+    <color name="intermediate">#b6751f</color>
+    <color name="advanced">#c41c1c</color>
 </resources>
