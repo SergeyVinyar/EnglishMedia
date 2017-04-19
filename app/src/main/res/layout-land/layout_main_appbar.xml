@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         app:layout_behavior="@string/bottom_sheet_behavior"
         app:behavior_hideable="false"
-        app:behavior_peekHeight="104dp"
+        app:behavior_peekHeight="66dp"
         app:rewind_increment="10000"
         app:fastforward_increment="10000" />
 

@@ -7,13 +7,16 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.CursorAdapter;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Space;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -56,7 +59,10 @@ public class EpisodeListFragment extends Fragment {
         EMApplication app = (EMApplication)getActivity().getApplication();
         View view =  inflater.inflate(R.layout.fragment_episodelist, container, false);
         UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
-        ListView listView = (ListView)view.findViewById(R.id.listview_fragment_episodelist);
+
+        RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_episodelist);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         // Podcast header
         Observable.just(podcastCode)
@@ -115,29 +121,7 @@ public class EpisodeListFragment extends Fragment {
                 .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((cursor) -> {
-                    listView.setAdapter(new CursorAdapter(getContext(), cursor, false) {
-
-                        @Override
-                        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-                            return ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.item_episode, parent, false);
-                        }
-
-                        @Override
-                        public void bindView(View view, Context context, Cursor cursor) {
-                            ((TextView)view.findViewById(R.id.textview_item_episode_title)).setText(cursor.getString(cursor.getColumnIndex(Episode.TITLE)));
-                            ((TextView)view.findViewById(R.id.textview_item_episode_description)).setText(cursor.getString(cursor.getColumnIndex(Episode.DESCRIPTION)));
-
-                            ((Button)view.findViewById(R.id.button_item_episode_play)).setOnClickListener((v) -> {
-                                if (mListener != null) {
-                                    View parentRow = (View) v.getParent();
-                                    ListView listView1 = (ListView) parentRow.getParent();
-                                    int position = listView.getPositionForView(parentRow);
-                                    Cursor c = (Cursor) listView.getItemAtPosition(position);
-                                    mListener.onPlayEpisode(podcastCode, c.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
-                                }
-                            });
-                        }
-                    });
+                    recyclerView.setAdapter(new EpisodeListFragment.RecyclerViewAdapter(cursor));
                 });
 
         return view;
@@ -160,6 +144,77 @@ public class EpisodeListFragment extends Fragment {
         mListener = null;
     }
 
+    public class RecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
+
+        private Cursor cursor;
+
+        public RecyclerViewAdapter(Cursor cursor) {
+            this.cursor = cursor;
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
+            return new ViewHolder(v, cursor);
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            cursor.move(position - cursor.getPosition());
+
+            // No separator at the first item
+            if (cursor.getPosition() != 0)
+                holder.separatorView.setVisibility(View.VISIBLE);
+            else
+                holder.separatorView.setVisibility(View.GONE);
+
+            holder.titleView.setText(cursor.getString(cursor.getColumnIndex(Episode.TITLE)));
+            holder.descriptionView.setText(cursor.getString(cursor.getColumnIndex(Episode.DESCRIPTION)));
+
+            // Add empty space at the bottom to the last item otherwise item hides behind
+            // player control view.
+            if (cursor.getPosition() == cursor.getCount() - 1)
+                holder.bottomSpaceView.setVisibility(View.VISIBLE);
+            else
+                holder.bottomSpaceView.setVisibility(View.GONE);
+        }
+
+        @Override
+        public int getItemCount() {
+            return cursor.getCount();
+        }
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder {
+
+        private Cursor cursor;
+
+        private ImageView separatorView;
+        private TextView titleView;
+        private TextView descriptionView;
+        private Button playButtonView;
+        private Space bottomSpaceView;
+
+        ViewHolder(View itemView, Cursor cursor) {
+            super(itemView);
+
+            this.cursor = cursor;
+
+            separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
+            titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
+            descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_episode_description));
+            playButtonView = (Button)itemView.findViewById(R.id.button_item_episode_play);
+            bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_episode_bottomspace));
+
+            playButtonView.setOnClickListener((view) -> {
+                if (mListener != null) {
+                    cursor.moveToPosition(getAdapterPosition());
+                    UUID podcastCode = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.PODCAST_CODE)));
+                    mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
+                }
+            });
+        }
+    }
 
     public interface OnEpisodeListFragmentListener {
         void onPlayEpisode(UUID podcastCode, String url);

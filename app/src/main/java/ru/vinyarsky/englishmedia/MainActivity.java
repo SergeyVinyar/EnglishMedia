@@ -30,8 +30,6 @@ public class MainActivity extends AppCompatActivity
             PodcastListFragment.OnPodcastListFragmentListener,
             EpisodeListFragment.OnEpisodeListFragmentListener {
 
-    private Fragment currentFragment;
-
     private ServiceConnection mediaServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -69,11 +67,11 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
 
-        if (currentFragment == null) {
-            currentFragment = PodcastListFragment.newInstance();
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);
+        if (fragment == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .add(R.id.framelayout_layout_main_appbar_fragment, currentFragment)
+                    .add(R.id.framelayout_layout_main_appbar_fragment, PodcastListFragment.newInstance())
                     .commit();
         }
     }
@@ -149,7 +147,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
-        Fragment oldFragment = this.currentFragment;
+        Fragment oldFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);;
         Fragment newFragment = EpisodeListFragment.newInstance(podcastCode);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -161,8 +159,6 @@ public class MainActivity extends AppCompatActivity
                 .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
                 .addToBackStack(null)
                 .commit();
-
-        this.currentFragment = newFragment;
     }
 
     @Override

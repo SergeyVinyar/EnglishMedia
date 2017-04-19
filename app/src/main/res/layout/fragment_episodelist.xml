@@ -102,8 +102,8 @@
         tools:layout_editor_absoluteY="0dp"
         tools:layout_editor_absoluteX="16dp" />
 
-    <ListView
-        android:id="@+id/listview_fragment_episodelist"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerview_fragment_episodelist"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

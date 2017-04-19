@@ -4,14 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <TextView
         android:id="@+id/textview_item_episode_description"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="0dp"
-        android:layout_marginRight="0dp"
         android:layout_marginTop="4dp"
         android:text="Description"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
@@ -21,11 +19,9 @@
         app:layout_constraintTop_toBottomOf="@+id/textview_item_episode_title" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/imageView_item_episode"
         android:layout_width="22dp"
         android:layout_height="22dp"
-        android:layout_marginLeft="0dp"
-        android:layout_marginTop="0dp"
         app:layout_constraintLeft_toLeftOf="@+id/guideline_item_episode_left"
         app:layout_constraintTop_toTopOf="@+id/textview_item_episode_title"
         app:srcCompat="@drawable/flag_usa" />
@@ -35,27 +31,31 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
-        android:layout_marginRight="0dp"
         android:layout_marginTop="8dp"
         android:text="Title"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        app:layout_constraintLeft_toRightOf="@+id/imageView"
+        app:layout_constraintLeft_toRightOf="@+id/imageView_item_episode"
         app:layout_constraintRight_toLeftOf="@+id/guideline_item_episode_right"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="8dp" />
 
     <android.support.constraint.Guideline
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/guideline_item_episode_right"
         android:orientation="vertical"
-        app:layout_constraintGuide_end="16dp" />
+        app:layout_constraintGuide_end="16dp"
+        tools:layout_editor_absoluteY="0dp"
+        tools:layout_editor_absoluteX="368dp" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline_item_episode_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="16dp" />
+        app:layout_constraintGuide_begin="16dp"
+        tools:layout_editor_absoluteY="0dp"
+        tools:layout_editor_absoluteX="16dp" />
 
     <Button
         android:id="@+id/button_item_episode_play"
@@ -63,9 +63,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="30dp"
-        android:layout_marginTop="0dp"
         android:text="PLAY"
         app:layout_constraintLeft_toLeftOf="@+id/guideline_item_episode_left"
-        app:layout_constraintTop_toBottomOf="@+id/textview_item_episode_description" />
+        app:layout_constraintTop_toBottomOf="@+id/textview_item_episode_description"
+        android:layout_marginStart="30dp" />
+
+    <Space
+        android:id="@+id/imageview_item_episode_bottomspace"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:visibility="visible"
+        app:layout_constraintLeft_toLeftOf="@+id/guideline_item_episode_left"
+        app:layout_constraintRight_toLeftOf="@+id/guideline_item_episode_right"
+        app:layout_constraintTop_toBottomOf="@+id/button_item_episode_play" />
+
+    <ImageView
+        android:id="@+id/imageview_item_episode_separator"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:background="@android:color/darker_gray"
+        app:layout_constraintRight_toLeftOf="@+id/guideline_item_episode_right"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintLeft_toLeftOf="@+id/guideline_item_episode_left" />
 
 </android.support.constraint.ConstraintLayout>
