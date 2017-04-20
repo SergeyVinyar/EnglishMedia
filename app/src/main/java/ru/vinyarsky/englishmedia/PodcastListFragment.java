@@ -7,20 +7,24 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.support.v4.util.ArraySet;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Space;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 import io.reactivex.Observable;
@@ -88,15 +92,17 @@ public class PodcastListFragment extends Fragment {
     public class RecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
         private Cursor cursor;
+        private Set<Integer> expandedPositions = new ArraySet<>();
 
         public RecyclerViewAdapter(Cursor cursor) {
             this.cursor = cursor;
+            this.expandedPositions = new ArraySet<>(cursor.getCount());
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_podcast, parent, false);
-            return new ViewHolder(v, cursor);
+            return new ViewHolder(v, cursor, this);
         }
 
         @Override
@@ -146,6 +152,15 @@ public class PodcastListFragment extends Fragment {
             holder.titleView.setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
             holder.descriptionView.setText(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION)));
 
+            if (expandedPositions.contains(cursor.getPosition())) {
+                holder.descriptionView.setMaxLines(50);
+                holder.moreView.setVisibility(View.GONE);
+            }
+            else {
+                holder.descriptionView.setMaxLines(1);
+                holder.moreView.setVisibility(View.VISIBLE);
+            }
+
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
                 holder.podcastImageView.setImageBitmap(bitmap);
@@ -177,10 +192,11 @@ public class PodcastListFragment extends Fragment {
         private TextView levelView;
         private TextView titleView;
         private TextView descriptionView;
+        private TextView moreView;
         private ImageView podcastImageView;
         private Space bottomSpaceView;
 
-        ViewHolder(View itemView, Cursor cursor) {
+        ViewHolder(View itemView, Cursor cursor, RecyclerViewAdapter adapter) {
             super(itemView);
 
             this.cursor = cursor;
@@ -191,6 +207,7 @@ public class PodcastListFragment extends Fragment {
             levelView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_level));
             titleView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_title));
             descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_description));
+            moreView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_more));
             podcastImageView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast));
             bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_podcast_bottomspace));
 
@@ -201,6 +218,17 @@ public class PodcastListFragment extends Fragment {
                     mListener.onSelectPodcast(code);
                 }
             });
+
+            View.OnClickListener expandListener = (v) -> {
+                Integer position = getAdapterPosition();
+                if (adapter.expandedPositions.contains(position))
+                    adapter.expandedPositions.remove(position);
+                else
+                    adapter.expandedPositions.add(position);
+                adapter.notifyItemChanged(position);
+            };
+            descriptionView.setOnClickListener(expandListener);
+            moreView.setOnClickListener(expandListener);
         }
     }
 
