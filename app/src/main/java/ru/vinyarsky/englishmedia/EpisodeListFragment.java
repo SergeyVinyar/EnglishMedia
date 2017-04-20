@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.Space;
 import android.widget.TextView;
 
@@ -57,74 +56,27 @@ public class EpisodeListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         EMApplication app = (EMApplication)getActivity().getApplication();
-        View view =  inflater.inflate(R.layout.fragment_episodelist, container, false);
         UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
 
-        RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_episodelist);
+        RecyclerView recyclerView = (RecyclerView) inflater.inflate(R.layout.fragment_episodelist, container, false);
         recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        // Podcast header
-        Observable.just(podcastCode)
+        Observable<Podcast> podcastObservable = Observable.just(podcastCode)
                 .subscribeOn(Schedulers.io())
                 .map((code) -> Podcast.read(app.getDbHelper(), code))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((podcast) -> {
-                    ImageView flagView = ((ImageView) view.findViewById(R.id.imageview_fragment_episodelist_flag));
-                    switch (podcast.getCountry()) {
-                        case UK:
-                            flagView.setVisibility(View.VISIBLE);
-                            flagView.setImageResource(R.drawable.flag_uk);
-                            break;
-                        case USA:
-                            flagView.setVisibility(View.VISIBLE);
-                            flagView.setImageResource(R.drawable.flag_usa);
-                            break;
-                        default:
-                            flagView.setVisibility(View.INVISIBLE);
-                            break;
-                    }
+                .observeOn(AndroidSchedulers.mainThread());
 
-                    View subscribedView = view.findViewById(R.id.textview_fragment_episodelist_subscribed);
-                    if (podcast.isSubscribed())
-                        subscribedView.setVisibility(View.VISIBLE);
-                    else
-                        subscribedView.setVisibility(View.INVISIBLE);
-
-                    TextView levelView = ((TextView) view.findViewById(R.id.textview_fragment_episodelist_level));
-                    levelView.setText(podcast.getLevel().toString());
-                    switch (podcast.getLevel()) {
-                        case BEGINNER:
-                            levelView.setTextColor(getResources().getColor(R.color.beginner));
-                            break;
-                        case INTERMEDIATE:
-                            levelView.setTextColor(getResources().getColor(R.color.intermediate));
-                            break;
-                        case ADVANCED:
-                            levelView.setTextColor(getResources().getColor(R.color.advanced));
-                            break;
-                    }
-
-                    ((TextView) view.findViewById(R.id.textview_fragment_episodelist_title)).setText(podcast.getTitle());
-
-                    try {
-                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(podcast.getImagePath()));
-                        ((ImageView) view.findViewById(R.id.imageview_fragment_episodelist)).setImageBitmap(bitmap);
-                    } catch (IOException e) {
-                        // OK, no image then...
-                    }
-                });
-
-        // List of episodes
-        Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+        Observable<Cursor> episodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
                 .subscribeOn(Schedulers.io())
                 .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((cursor) -> {
-                    recyclerView.setAdapter(new EpisodeListFragment.RecyclerViewAdapter(cursor));
-                });
+                .observeOn(AndroidSchedulers.mainThread());
 
-        return view;
+        Observable
+                .zip(podcastObservable, episodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
+                .subscribe(adapter -> recyclerView.setAdapter(adapter));
+
+        return recyclerView;
     }
 
     @Override
@@ -144,50 +96,114 @@ public class EpisodeListFragment extends Fragment {
         mListener = null;
     }
 
-    public class RecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
+    private class RecyclerViewAdapter extends RecyclerView.Adapter {
 
-        private Cursor cursor;
+        private final static int PODCAST_HEADER_VIEWTYPE = 0;
+        private final static int EPISODE_VIEWTYPE = 1;
 
-        public RecyclerViewAdapter(Cursor cursor) {
-            this.cursor = cursor;
+        private Podcast podcast;
+        private Cursor episodesCursor;
+
+        RecyclerViewAdapter(Podcast podcast, Cursor episodesCursor) {
+            this.podcast = podcast;
+            this.episodesCursor = episodesCursor;
         }
 
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
-            return new ViewHolder(v, cursor);
+        public int getItemViewType(int position) {
+            return position == 0 ? PODCAST_HEADER_VIEWTYPE : EPISODE_VIEWTYPE;
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            cursor.move(position - cursor.getPosition());
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            if (viewType == PODCAST_HEADER_VIEWTYPE) {
+                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_podcast_header, parent, false);
+                return new PodcastHeaderViewHolder(v, podcast);
+            }
+            else { // EPISODE_VIEWTYPE
+                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
+                return new EpisodeViewHolder(v, episodesCursor);
+            }
+        }
 
-            // No separator at the first item
-            if (cursor.getPosition() != 0)
-                holder.separatorView.setVisibility(View.VISIBLE);
-            else
-                holder.separatorView.setVisibility(View.GONE);
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            if (position == 0) { // Podcast header
+                PodcastHeaderViewHolder podcastHeaderViewHolder = (PodcastHeaderViewHolder) holder;
 
-            holder.titleView.setText(cursor.getString(cursor.getColumnIndex(Episode.TITLE)));
-            holder.descriptionView.setText(cursor.getString(cursor.getColumnIndex(Episode.DESCRIPTION)));
+                switch (podcast.getCountry()) {
+                    case UK:
+                        podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
+                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_uk);
+                        break;
+                    case USA:
+                        podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
+                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_usa);
+                        break;
+                    default:
+                        podcastHeaderViewHolder.flagView.setVisibility(View.INVISIBLE);
+                        break;
+                }
 
-            // Add empty space at the bottom to the last item otherwise item hides behind
-            // player control view.
-            if (cursor.getPosition() == cursor.getCount() - 1)
-                holder.bottomSpaceView.setVisibility(View.VISIBLE);
-            else
-                holder.bottomSpaceView.setVisibility(View.GONE);
+                if (podcast.isSubscribed())
+                    podcastHeaderViewHolder.subscribedView.setVisibility(View.VISIBLE);
+                else
+                    podcastHeaderViewHolder.subscribedView.setVisibility(View.INVISIBLE);
+
+                podcastHeaderViewHolder.levelView.setText(podcast.getLevel().toString());
+                switch (podcast.getLevel()) {
+                    case BEGINNER:
+                        podcastHeaderViewHolder.levelView.setTextColor(getResources().getColor(R.color.beginner));
+                        break;
+                    case INTERMEDIATE:
+                        podcastHeaderViewHolder.levelView.setTextColor(getResources().getColor(R.color.intermediate));
+                        break;
+                    case ADVANCED:
+                        podcastHeaderViewHolder.levelView.setTextColor(getResources().getColor(R.color.advanced));
+                        break;
+                }
+
+                podcastHeaderViewHolder.titleView.setText(podcast.getTitle());
+
+                try {
+                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(podcast.getImagePath()));
+                    podcastHeaderViewHolder.podcastImageView.setImageBitmap(bitmap);
+                } catch (IOException e) {
+                    // OK, no image then...
+                }
+            }
+            else { // Some episode
+                EpisodeViewHolder episodeViewHolder = (EpisodeViewHolder) holder;
+
+                position--; // Because podcast header is always an extra position
+
+                episodesCursor.move(position - episodesCursor.getPosition());
+
+                // No separator at the first item
+                if (episodesCursor.getPosition() != 0)
+                    episodeViewHolder.separatorView.setVisibility(View.VISIBLE);
+                else
+                    episodeViewHolder.separatorView.setVisibility(View.GONE);
+
+                episodeViewHolder.titleView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.TITLE)));
+                episodeViewHolder.descriptionView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.DESCRIPTION)));
+
+                // Add empty space at the bottom to the last item otherwise this item hides behind
+                // player control view
+                if (episodesCursor.getPosition() == episodesCursor.getCount() - 1)
+                    episodeViewHolder.bottomSpaceView.setVisibility(View.VISIBLE);
+                else
+                    episodeViewHolder.bottomSpaceView.setVisibility(View.GONE);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return cursor.getCount();
+            return episodesCursor.getCount();
         }
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder {
-
-        private Cursor cursor;
+    private class EpisodeViewHolder extends RecyclerView.ViewHolder {
 
         private ImageView separatorView;
         private TextView titleView;
@@ -195,10 +211,8 @@ public class EpisodeListFragment extends Fragment {
         private Button playButtonView;
         private Space bottomSpaceView;
 
-        ViewHolder(View itemView, Cursor cursor) {
+        EpisodeViewHolder(View itemView, Cursor cursor) {
             super(itemView);
-
-            this.cursor = cursor;
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
             titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
@@ -213,6 +227,25 @@ public class EpisodeListFragment extends Fragment {
                     mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
                 }
             });
+        }
+    }
+
+    private class PodcastHeaderViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView flagView;
+        private View subscribedView;
+        private TextView levelView;
+        private TextView titleView;
+        private ImageView podcastImageView;
+
+        PodcastHeaderViewHolder(View itemView, Podcast podcast) {
+            super(itemView);
+
+            flagView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_header_flag));
+            subscribedView = itemView.findViewById(R.id.textview_item_podcast_header_subscribed);
+            levelView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_header_level));
+            titleView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_header_title));
+            podcastImageView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_header));
         }
     }
 
