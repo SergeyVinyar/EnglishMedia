@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.support.v4.util.ArraySet;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Set;
 import java.util.UUID;
 
 import io.reactivex.Observable;
@@ -103,10 +105,12 @@ public class EpisodeListFragment extends Fragment {
 
         private Podcast podcast;
         private Cursor episodesCursor;
+        private Set<Integer> expandedPositions = new ArraySet<>();
 
         RecyclerViewAdapter(Podcast podcast, Cursor episodesCursor) {
             this.podcast = podcast;
             this.episodesCursor = episodesCursor;
+            this.expandedPositions = new ArraySet<>(episodesCursor.getCount());
         }
 
         @Override
@@ -122,7 +126,7 @@ public class EpisodeListFragment extends Fragment {
             }
             else { // EPISODE_VIEWTYPE
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
-                return new EpisodeViewHolder(v, episodesCursor);
+                return new EpisodeViewHolder(v, episodesCursor, this);
             }
         }
 
@@ -175,7 +179,7 @@ public class EpisodeListFragment extends Fragment {
             else { // Some episode
                 EpisodeViewHolder episodeViewHolder = (EpisodeViewHolder) holder;
 
-                position--; // Because podcast header is always an extra position
+                position--; // Because podcast header is always at position 0
 
                 episodesCursor.move(position - episodesCursor.getPosition());
 
@@ -188,6 +192,15 @@ public class EpisodeListFragment extends Fragment {
                 episodeViewHolder.titleView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.TITLE)));
                 episodeViewHolder.descriptionView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.DESCRIPTION)));
 
+                if (expandedPositions.contains(episodesCursor.getPosition())) {
+                    episodeViewHolder.descriptionView.setMaxLines(50);
+                    episodeViewHolder.moreView.setVisibility(View.GONE);
+                }
+                else {
+                    episodeViewHolder.descriptionView.setMaxLines(1);
+                    episodeViewHolder.moreView.setVisibility(View.VISIBLE);
+                }
+
                 // Add empty space at the bottom to the last item otherwise this item hides behind
                 // player control view
                 if (episodesCursor.getPosition() == episodesCursor.getCount() - 1)
@@ -199,7 +212,7 @@ public class EpisodeListFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return episodesCursor.getCount();
+            return episodesCursor.getCount() + 1; // + podcast header at position 0
         }
     }
 
@@ -208,15 +221,17 @@ public class EpisodeListFragment extends Fragment {
         private ImageView separatorView;
         private TextView titleView;
         private TextView descriptionView;
+        private TextView moreView;
         private Button playButtonView;
         private Space bottomSpaceView;
 
-        EpisodeViewHolder(View itemView, Cursor cursor) {
+        EpisodeViewHolder(View itemView, Cursor cursor, RecyclerViewAdapter adapter) {
             super(itemView);
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
             titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
             descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_episode_description));
+            moreView = ((TextView)itemView.findViewById(R.id.textview_item_episode_more));
             playButtonView = (Button)itemView.findViewById(R.id.button_item_episode_play);
             bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_episode_bottomspace));
 
@@ -227,6 +242,17 @@ public class EpisodeListFragment extends Fragment {
                     mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
                 }
             });
+
+            View.OnClickListener expandListener = (v) -> {
+                Integer position = getAdapterPosition() - 1; // Because podcast header is always at position 0
+                if (adapter.expandedPositions.contains(position))
+                    adapter.expandedPositions.remove(position);
+                else
+                    adapter.expandedPositions.add(position);
+                adapter.notifyItemChanged(position + 1);
+            };
+            descriptionView.setOnClickListener(expandListener);
+            moreView.setOnClickListener(expandListener);
         }
     }
 
