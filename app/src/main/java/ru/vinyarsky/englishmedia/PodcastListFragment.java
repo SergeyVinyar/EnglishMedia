@@ -211,14 +211,6 @@ public class PodcastListFragment extends Fragment {
             podcastImageView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast));
             bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_podcast_bottomspace));
 
-            itemView.setOnClickListener((view) -> {
-                if (mListener != null) {
-                    cursor.moveToPosition(getAdapterPosition());
-                    UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Podcast.CODE)));
-                    mListener.onSelectPodcast(code);
-                }
-            });
-
             View.OnClickListener expandListener = (v) -> {
                 Integer position = getAdapterPosition();
                 if (adapter.expandedPositions.contains(position))
@@ -227,7 +219,16 @@ public class PodcastListFragment extends Fragment {
                     adapter.expandedPositions.add(position);
                 adapter.notifyItemChanged(position);
             };
-            descriptionView.setOnClickListener(expandListener);
+
+            itemView.setOnClickListener((view) -> {
+                if (mListener != null) {
+                    cursor.moveToPosition(getAdapterPosition());
+                    UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Podcast.CODE)));
+                    mListener.onSelectPodcast(code);
+                }
+            });
+
+            //descriptionView.setOnClickListener(expandListener);
             moreView.setOnClickListener(expandListener);
         }
     }

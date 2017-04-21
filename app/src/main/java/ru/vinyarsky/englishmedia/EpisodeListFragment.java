@@ -20,8 +20,12 @@ import android.widget.Space;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import io.reactivex.Observable;
@@ -29,6 +33,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
+
+import static java.text.DateFormat.DEFAULT;
+import static java.text.DateFormat.getTimeInstance;
 
 public class EpisodeListFragment extends Fragment {
 
@@ -183,14 +190,35 @@ public class EpisodeListFragment extends Fragment {
 
                 episodesCursor.move(position - episodesCursor.getPosition());
 
+                Episode episode = new Episode(episodesCursor);
+
                 // No separator at the first item
                 if (episodesCursor.getPosition() != 0)
                     episodeViewHolder.separatorView.setVisibility(View.VISIBLE);
                 else
                     episodeViewHolder.separatorView.setVisibility(View.GONE);
 
-                episodeViewHolder.titleView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.TITLE)));
-                episodeViewHolder.descriptionView.setText(episodesCursor.getString(episodesCursor.getColumnIndex(Episode.DESCRIPTION)));
+                switch (episode.getStatus()) {
+                    case NEW:
+                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_new);
+                        break;
+                    case LISTENING:
+                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_listening);
+                        break;
+                    case COMPLETED:
+                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_completed);
+                        break;
+                }
+
+                episodeViewHolder.titleView.setText(episode.getTitle());
+
+                episodeViewHolder.pubDateView.setText(episode.getPubDate().toString());
+
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                timeFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                episodeViewHolder.durationView.setText(timeFormat.format(((long) episode.getDuration()) * 1000));
+
+                episodeViewHolder.descriptionView.setText(episode.getDescription());
 
                 if (expandedPositions.contains(episodesCursor.getPosition())) {
                     episodeViewHolder.descriptionView.setMaxLines(50);
@@ -219,7 +247,10 @@ public class EpisodeListFragment extends Fragment {
     private class EpisodeViewHolder extends RecyclerView.ViewHolder {
 
         private ImageView separatorView;
+        private ImageView statusView;
         private TextView titleView;
+        private TextView pubDateView;
+        private TextView durationView;
         private TextView descriptionView;
         private TextView moreView;
         private Button playButtonView;
@@ -229,19 +260,14 @@ public class EpisodeListFragment extends Fragment {
             super(itemView);
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
+            statusView = ((ImageView)itemView.findViewById(R.id.imageView_item_episode_status));
             titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
             descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_episode_description));
+            pubDateView = ((TextView)itemView.findViewById(R.id.textview_item_episode_pubdate));
+            durationView = ((TextView)itemView.findViewById(R.id.textview_item_episode_duration));
             moreView = ((TextView)itemView.findViewById(R.id.textview_item_episode_more));
             playButtonView = (Button)itemView.findViewById(R.id.button_item_episode_play);
             bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_episode_bottomspace));
-
-            playButtonView.setOnClickListener((view) -> {
-                if (mListener != null) {
-                    cursor.moveToPosition(getAdapterPosition());
-                    UUID podcastCode = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.PODCAST_CODE)));
-                    mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
-                }
-            });
 
             View.OnClickListener expandListener = (v) -> {
                 Integer position = getAdapterPosition() - 1; // Because podcast header is always at position 0
@@ -251,7 +277,17 @@ public class EpisodeListFragment extends Fragment {
                     adapter.expandedPositions.add(position);
                 adapter.notifyItemChanged(position + 1);
             };
-            descriptionView.setOnClickListener(expandListener);
+
+            playButtonView.setOnClickListener((view) -> {
+                if (mListener != null) {
+                    cursor.moveToPosition(getAdapterPosition());
+                    UUID podcastCode = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.PODCAST_CODE)));
+                    mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
+                    expandListener.onClick(view);
+                }
+            });
+
+            //descriptionView.setOnClickListener(expandListener);
             moreView.setOnClickListener(expandListener);
         }
     }

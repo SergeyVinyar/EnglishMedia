@@ -73,7 +73,7 @@ public final class Episode {
     /**
      * Instantiate existed item (from current cursor position)
      */
-    private Episode(Cursor cursor) {
+    public Episode(Cursor cursor) {
         this();
         this.code = UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE)));
         this.setPodcastCode(UUID.fromString(cursor.getString(cursor.getColumnIndex(PODCAST_CODE))));
@@ -84,7 +84,7 @@ public final class Episode {
         this.setContentUrl(cursor.getString(cursor.getColumnIndex(CONTENT_URL)));
         this.setContentLocalPath(cursor.getString(cursor.getColumnIndex(CONTENT_LOCAL_PATH)));
         this.setDuration(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DURATION))));
-        this.setPubDate(new Date(cursor.getString(cursor.getColumnIndex(PUB_DATE))));
+        this.setPubDate(new Date(cursor.getLong(cursor.getColumnIndex(PUB_DATE))));
         this.setStatus(EpisodeStatus.valueOf(cursor.getString(cursor.getColumnIndex(STATUS))));
         this.setTimeElapsed(Integer.parseInt(cursor.getString(cursor.getColumnIndex(TIME_ELAPSED))));
     }
@@ -135,7 +135,7 @@ public final class Episode {
         vals.put(TIME_ELAPSED, this.getTimeElapsed());
         if (this.getPubDate() != null)
             vals.put(PUB_DATE, this.getPubDate().getTime());
-        vals.put(STATUS, this.getStatus().ordinal());
+        vals.put(STATUS, this.getStatus().toString());
         db.insertOrThrow(TABLE_NAME, null, vals);
 
         return this.getCode();

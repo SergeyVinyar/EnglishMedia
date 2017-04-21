@@ -65,7 +65,7 @@ public final class Podcast {
     /**
      * Instantiate existed item (from current cursor position)
      */
-    private Podcast(Cursor cursor) {
+    public Podcast(Cursor cursor) {
         this();
         this.code = UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE)));
         this.setCountry(Country.valueOf(cursor.getString(cursor.getColumnIndex(COUNTRY))));
