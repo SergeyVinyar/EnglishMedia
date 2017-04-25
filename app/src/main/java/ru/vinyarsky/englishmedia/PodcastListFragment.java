@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.ArraySet;
 import android.support.v4.widget.CursorAdapter;
@@ -187,6 +188,7 @@ public class PodcastListFragment extends Fragment {
         private Cursor cursor;
 
         private ImageView separatorView;
+        private ConstraintLayout constraintView;
         private ImageView flagView;
         private View subscribedView;
         private TextView levelView;
@@ -202,6 +204,7 @@ public class PodcastListFragment extends Fragment {
             this.cursor = cursor;
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_separator));
+            constraintView = ((ConstraintLayout) itemView.findViewById(R.id.constraintlayout_item_podcast));
             flagView = ((ImageView)itemView.findViewById(R.id.imageView_item_podcast_flag));
             subscribedView = itemView.findViewById(R.id.textview_item_podcast_subscribed);
             levelView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_level));
@@ -220,7 +223,7 @@ public class PodcastListFragment extends Fragment {
                 adapter.notifyItemChanged(position);
             };
 
-            itemView.setOnClickListener((view) -> {
+            constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
                     cursor.moveToPosition(getAdapterPosition());
                     UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Podcast.CODE)));

@@ -162,8 +162,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPlayEpisode(UUID podcastCode, String url) {
-        Intent intent = MediaService.newPlayIntent(getApplicationContext(), Uri.parse(url));
+    public void onPlayPauseEpisode(UUID podcastCode, String url) {
+        Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), Uri.parse(url));
         startService(intent);
     }
 }

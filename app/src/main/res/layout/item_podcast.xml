@@ -10,18 +10,23 @@
         android:id="@+id/imageview_item_podcast_separator"
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="0dp"
         android:background="@android:color/darker_gray" />
 
     <android.support.constraint.ConstraintLayout
+        android:id="@+id/constraintlayout_item_podcast"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingBottom="16dp"
-        android:paddingTop="16dp">
+        android:paddingTop="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?android:attr/selectableItemBackground">
 
         <TextView
             android:id="@+id/textview_item_podcast_subscribed"
@@ -116,14 +121,14 @@
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
             android:text="INTERMEDIATE"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             android:textStyle="bold"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintLeft_toRightOf="@+id/imageView_item_podcast_flag"
             app:layout_constraintRight_toLeftOf="@+id/guideline_item_podcast_middle"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="0dp" />
 
         <ImageView
             android:id="@+id/imageView_item_podcast_flag"
@@ -149,11 +154,8 @@
 
     <Space
         android:id="@+id/imageview_item_podcast_bottomspace"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:visibility="visible"
-        app:layout_constraintLeft_toLeftOf="@+id/guideline_item_podcast_left"
-        app:layout_constraintRight_toLeftOf="@+id/guideline_item_podcast_right"
-        app:layout_constraintTop_toBottomOf="@+id/imageview_item_podcast" />
+        android:visibility="visible"/>
 
 </LinearLayout>

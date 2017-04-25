@@ -41,7 +41,7 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     // TODO Foreground service
     // TODO Downloading
 
-    public static final String PLAY_ACTION = "ru.vinyarsky.englishmedia.action.play";
+    public static final String PLAY_PAUSE_TOGGLE_ACTION = "ru.vinyarsky.englishmedia.action.play_pause_toggle";
     public static final String DOWNLOAD_ACTION = "ru.vinyarsky.englishmedia.action.download";
 
     private SimpleExoPlayer player;
@@ -50,10 +50,12 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
 
     private int mountedViewCount = 0;
 
+    private Uri currentTrack;
+
     private Handler releaseDelayedHandler = new Handler();
 
-    public static Intent newPlayIntent(Context appContext, Uri uri) {
-        return new Intent(PLAY_ACTION, uri, appContext, MediaService.class);
+    public static Intent newPlayPauseToggleIntent(Context appContext, Uri uri) {
+        return new Intent(PLAY_PAUSE_TOGGLE_ACTION, uri, appContext, MediaService.class);
     }
 
     public static Intent newDownloadIntent(Context appContext, Uri uri) {
@@ -81,16 +83,18 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         switch (intent.getAction()) {
-            case PLAY_ACTION:
-                initPlayer();
+            case PLAY_PAUSE_TOGGLE_ACTION:
                 if (intent.getData() != null) {
-                    ExtractorMediaSource mediaSource = new ExtractorMediaSource(intent.getData(), this.dataSourceFactory, this.extractorsFactory, null, null);
-                    this.player.prepare(mediaSource);
-                    this.player.setPlayWhenReady(true);
-                }
-                else {
-                    // Just play already prepared media
-                    this.player.setPlayWhenReady(true);
+                    Uri uri = intent.getData();
+                    initPlayer();
+                    if (uri.equals(this.currentTrack)) {
+                        this.player.setPlayWhenReady(!this.player.getPlayWhenReady());
+                    } else {
+                        ExtractorMediaSource mediaSource = new ExtractorMediaSource(intent.getData(), this.dataSourceFactory, this.extractorsFactory, null, null);
+                        this.player.prepare(mediaSource);
+                        this.player.setPlayWhenReady(true);
+                        currentTrack = intent.getData();
+                    }
                 }
                 break;
             case DOWNLOAD_ACTION:

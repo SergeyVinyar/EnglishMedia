@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.ArraySet;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -14,7 +15,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Space;
 import android.widget.TextView;
@@ -22,8 +22,6 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -34,7 +32,6 @@ import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
-import static java.text.DateFormat.DEFAULT;
 import static java.text.DateFormat.getTimeInstance;
 
 public class EpisodeListFragment extends Fragment {
@@ -212,9 +209,14 @@ public class EpisodeListFragment extends Fragment {
 
                 episodeViewHolder.titleView.setText(episode.getTitle());
 
-                episodeViewHolder.pubDateView.setText(episode.getPubDate().toString());
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy");
+                episodeViewHolder.pubDateView.setText(dateFormat.format(episode.getPubDate()));
 
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                SimpleDateFormat timeFormat;
+                if (episode.getDuration() >= 60 * 60)
+                    timeFormat = new SimpleDateFormat("HH:mm:ss");
+                else
+                    timeFormat = new SimpleDateFormat("mm:ss");
                 timeFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
                 episodeViewHolder.durationView.setText(timeFormat.format(((long) episode.getDuration()) * 1000));
 
@@ -247,26 +249,26 @@ public class EpisodeListFragment extends Fragment {
     private class EpisodeViewHolder extends RecyclerView.ViewHolder {
 
         private ImageView separatorView;
+        private ConstraintLayout constraintView;
         private ImageView statusView;
         private TextView titleView;
         private TextView pubDateView;
         private TextView durationView;
         private TextView descriptionView;
         private TextView moreView;
-        private Button playButtonView;
         private Space bottomSpaceView;
 
         EpisodeViewHolder(View itemView, Cursor cursor, RecyclerViewAdapter adapter) {
             super(itemView);
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
+            constraintView = ((ConstraintLayout) itemView.findViewById(R.id.constraintlayout_item_episode));
             statusView = ((ImageView)itemView.findViewById(R.id.imageView_item_episode_status));
             titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
             descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_episode_description));
             pubDateView = ((TextView)itemView.findViewById(R.id.textview_item_episode_pubdate));
             durationView = ((TextView)itemView.findViewById(R.id.textview_item_episode_duration));
             moreView = ((TextView)itemView.findViewById(R.id.textview_item_episode_more));
-            playButtonView = (Button)itemView.findViewById(R.id.button_item_episode_play);
             bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_episode_bottomspace));
 
             View.OnClickListener expandListener = (v) -> {
@@ -278,12 +280,11 @@ public class EpisodeListFragment extends Fragment {
                 adapter.notifyItemChanged(position + 1);
             };
 
-            playButtonView.setOnClickListener((view) -> {
+            constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
-                    cursor.moveToPosition(getAdapterPosition());
+                    cursor.moveToPosition(getAdapterPosition() - 1);
                     UUID podcastCode = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.PODCAST_CODE)));
-                    mListener.onPlayEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
-                    expandListener.onClick(view);
+                    mListener.onPlayPauseEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
                 }
             });
 
@@ -312,6 +313,6 @@ public class EpisodeListFragment extends Fragment {
     }
 
     public interface OnEpisodeListFragmentListener {
-        void onPlayEpisode(UUID podcastCode, String url);
+        void onPlayPauseEpisode(UUID podcastCode, String url);
     }
 }
