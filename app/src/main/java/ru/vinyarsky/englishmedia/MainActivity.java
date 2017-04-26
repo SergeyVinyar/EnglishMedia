@@ -18,7 +18,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.google.android.exoplayer2.ui.PlaybackControlView;
+import ru.vinyarsky.englishmedia.EMPlaybackControlView;
 
 import java.util.UUID;
 
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity
         public void onServiceConnected(ComponentName name, IBinder service) {
             MainActivity.this.mediaServiceBinder = (MediaService.MediaServiceBinder) service;
 
-            PlaybackControlView controlView = (PlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
+            EMPlaybackControlView controlView = (EMPlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
             MainActivity.this.mediaServiceBinder.mountPlaybackControlView(controlView);
             controlView.setShowTimeoutMs(-1);
             controlView.show();
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            PlaybackControlView controlView = (PlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
+            EMPlaybackControlView controlView = (EMPlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
             MainActivity.this.mediaServiceBinder.unMountPlaybackControlView(controlView);
 
             MainActivity.this.mediaServiceBinder = null;
@@ -162,8 +162,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPlayPauseEpisode(UUID podcastCode, String url) {
-        Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), Uri.parse(url));
+    public void onPlayPauseEpisode(UUID episodeCode) {
+        Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), episodeCode);
         startService(intent);
     }
 }

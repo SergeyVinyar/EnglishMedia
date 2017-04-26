@@ -198,12 +198,14 @@ public class EpisodeListFragment extends Fragment {
                 switch (episode.getStatus()) {
                     case NEW:
                         episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_new);
+                        episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case LISTENING:
                         episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_listening);
+                        episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case COMPLETED:
-                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_completed);
+                        episodeViewHolder.statusView.setVisibility(View.GONE);
                         break;
                 }
 
@@ -218,7 +220,12 @@ public class EpisodeListFragment extends Fragment {
                 else
                     timeFormat = new SimpleDateFormat("mm:ss");
                 timeFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-                episodeViewHolder.durationView.setText(timeFormat.format(((long) episode.getDuration()) * 1000));
+                if (episode.getCurrentPosition() == 0) {
+                    episodeViewHolder.durationView.setText(timeFormat.format(((long) episode.getDuration()) * 1000));
+                }
+                else {
+                    episodeViewHolder.durationView.setText("Remained " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000)); // TODO Move to resource
+                }
 
                 episodeViewHolder.descriptionView.setText(episode.getDescription());
 
@@ -283,8 +290,8 @@ public class EpisodeListFragment extends Fragment {
             constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
                     cursor.moveToPosition(getAdapterPosition() - 1);
-                    UUID podcastCode = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.PODCAST_CODE)));
-                    mListener.onPlayPauseEpisode(podcastCode, cursor.getString(cursor.getColumnIndex(Episode.CONTENT_URL)));
+                    UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.CODE)));
+                    mListener.onPlayPauseEpisode(code);
                 }
             });
 
@@ -313,6 +320,6 @@ public class EpisodeListFragment extends Fragment {
     }
 
     public interface OnEpisodeListFragmentListener {
-        void onPlayPauseEpisode(UUID podcastCode, String url);
+        void onPlayPauseEpisode(UUID episodeCode);
     }
 }

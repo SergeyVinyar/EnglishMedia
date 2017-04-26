@@ -17,6 +17,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.ReplaySubject;
 
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
+
 
 public final class Podcast {
 
@@ -114,7 +116,7 @@ public final class Podcast {
         vals.put(IMAGE_PATH, this.getImagePath());
         vals.put(RSS_URL, this.getRssUrl());
         vals.put(SUBSCRIBED, this.isSubscribed() ? 1 : 0);
-        db.insertOrThrow(TABLE_NAME, null, vals);
+        db.insertWithOnConflict(TABLE_NAME, null, vals, CONFLICT_REPLACE);
 
         return this.getCode();
     }

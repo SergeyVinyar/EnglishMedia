@@ -107,6 +107,7 @@ public final class RssFetcher {
     private Episode parseRssItem(XmlPullParser parser) throws XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, null, "item");
         Episode episode = new Episode();
+        episode.setCurrentPosition(0);
         String currentTag = "";
         SimpleDateFormat dateFormatYYYY = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.US);
         SimpleDateFormat dateFormatYY = new SimpleDateFormat("E, dd MMM yy HH:mm:ss z", Locale.US);
@@ -116,7 +117,6 @@ public final class RssFetcher {
                 currentTag = parser.getName();
                 if ("enclosure".equals(currentTag)) {
                     episode.setContentUrl(parser.getAttributeValue(null, "url"));
-                    episode.setFileSize(Integer.parseInt(parser.getAttributeValue(null, "length")));
                 }
             }
             else if (eventType == XmlPullParser.END_TAG) {

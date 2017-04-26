@@ -7,22 +7,22 @@ import android.database.sqlite.SQLiteDatabase;
 import java.util.Date;
 import java.util.UUID;
 
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
+
 
 public final class Episode {
 
     public static final String CODE = "code";
     public static final String PODCAST_CODE = "podcast_code";
-    public static final String EPISODE_GUID = "episodeGuid";
+    public static final String EPISODE_GUID = "episode_guid";
     public static final String TITLE = "title";
     public static final String DESCRIPTION = "description";
     public static final String PAGE_URL = "page_url";
     public static final String CONTENT_URL = "content_url";
-    public static final String CONTENT_LOCAL_PATH = "content_local_path";
-    public static final String FILE_SIZE = "file_size";
     public static final String DURATION = "duration";
     public static final String PUB_DATE = "pub_date";
     public static final String STATUS = "status";
-    public static final String TIME_ELAPSED = "time_elapsed";
+    public static final String CURRENT_POSITION = "current_position";
 
     private static String TABLE_NAME = "Episodes";
 
@@ -35,12 +35,10 @@ public final class Episode {
             String.format("  %s text,", DESCRIPTION) +
             String.format("  %s text,", PAGE_URL) +
             String.format("  %s text not null,", CONTENT_URL) +
-            String.format("  %s text,", CONTENT_LOCAL_PATH) +
-            String.format("  %s integer,", FILE_SIZE) +
             String.format("  %s integer not null,", DURATION) +
             String.format("  %s integer,", PUB_DATE) +
             String.format("  %s integer not null,", STATUS) +
-            String.format("  %s integer not null", TIME_ELAPSED) +
+            String.format("  %s integer not null", CURRENT_POSITION) +
             ")";
 
     private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
@@ -55,19 +53,17 @@ public final class Episode {
     private String description;
     private String pageUrl;
     private String contentUrl;
-    private String contentLocalPath;
-    private int fileSize;
     private int duration;
     private Date pubDate;
     private EpisodeStatus status;
-    private int timeElapsed;
+    private int currentPosition;
 
     /**
      * Create new item
      */
     public Episode() {
         this.setStatus(EpisodeStatus.NEW);
-        this.setTimeElapsed(0);
+        this.setCurrentPosition(0);
     }
 
     /**
@@ -82,11 +78,10 @@ public final class Episode {
         this.setDescription(cursor.getString(cursor.getColumnIndex(DESCRIPTION)));
         this.setPageUrl(cursor.getString(cursor.getColumnIndex(PAGE_URL)));
         this.setContentUrl(cursor.getString(cursor.getColumnIndex(CONTENT_URL)));
-        this.setContentLocalPath(cursor.getString(cursor.getColumnIndex(CONTENT_LOCAL_PATH)));
         this.setDuration(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DURATION))));
         this.setPubDate(new Date(cursor.getLong(cursor.getColumnIndex(PUB_DATE))));
         this.setStatus(EpisodeStatus.valueOf(cursor.getString(cursor.getColumnIndex(STATUS))));
-        this.setTimeElapsed(Integer.parseInt(cursor.getString(cursor.getColumnIndex(TIME_ELAPSED))));
+        this.setCurrentPosition(Integer.parseInt(cursor.getString(cursor.getColumnIndex(CURRENT_POSITION))));
     }
 
     public static Cursor readAll(DbHelper dbHelper) {
@@ -130,13 +125,12 @@ public final class Episode {
         vals.put(DESCRIPTION, this.getDescription());
         vals.put(PAGE_URL, this.getPageUrl());
         vals.put(CONTENT_URL, this.getContentUrl());
-        vals.put(CONTENT_LOCAL_PATH, this.getContentLocalPath());
         vals.put(DURATION, this.getDuration());
-        vals.put(TIME_ELAPSED, this.getTimeElapsed());
+        vals.put(CURRENT_POSITION, this.getCurrentPosition());
         if (this.getPubDate() != null)
             vals.put(PUB_DATE, this.getPubDate().getTime());
         vals.put(STATUS, this.getStatus().toString());
-        db.insertOrThrow(TABLE_NAME, null, vals);
+        db.insertWithOnConflict(TABLE_NAME, null, vals, CONFLICT_REPLACE);
 
         return this.getCode();
     }
@@ -197,14 +191,6 @@ public final class Episode {
         this.contentUrl = contentUrl;
     }
 
-    public String getContentLocalPath() {
-        return contentLocalPath;
-    }
-
-    public void setContentLocalPath(String contentLocalPath) {
-        this.contentLocalPath = contentLocalPath;
-    }
-
     public int getDuration() {
         return duration;
     }
@@ -213,12 +199,18 @@ public final class Episode {
         this.duration = duration;
     }
 
-    public int getTimeElapsed() {
-        return timeElapsed;
+    /**
+     * Current position in seconds
+     */
+    public int getCurrentPosition() {
+        return currentPosition;
     }
 
-    public void setTimeElapsed(int timeElapsed) {
-        this.timeElapsed = timeElapsed;
+    /**
+     * Current position in seconds
+     */
+    public void setCurrentPosition(int currentPosition) {
+        this.currentPosition = currentPosition;
     }
 
     public Date getPubDate() {
@@ -235,14 +227,6 @@ public final class Episode {
 
     public void setStatus(EpisodeStatus status) {
         this.status = status;
-    }
-
-    public int getFileSize() {
-        return fileSize;
-    }
-
-    public void setFileSize(int fileSize) {
-        this.fileSize = fileSize;
     }
 
     public enum EpisodeStatus { NEW, LISTENING, COMPLETED }
