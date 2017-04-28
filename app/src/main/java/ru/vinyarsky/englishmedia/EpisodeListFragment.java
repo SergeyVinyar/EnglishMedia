@@ -3,12 +3,17 @@ package ru.vinyarsky.englishmedia;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.ArraySet;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,13 +37,15 @@ import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
-import static java.text.DateFormat.getTimeInstance;
-
 public class EpisodeListFragment extends Fragment {
 
-    private static final String PODCAST_CODE_ARG = "podcastCode";
+    private static final String PODCAST_CODE_ARG = "podcast_code";
+    private static final String STATE_VIEWPAGER_CURRENT_ITEM = "viewpager_current_item";
 
     private OnEpisodeListFragmentListener mListener;
+
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
 
     public EpisodeListFragment() {
     }
@@ -61,28 +68,24 @@ public class EpisodeListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        EMApplication app = (EMApplication)getActivity().getApplication();
-        UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
 
-        RecyclerView recyclerView = (RecyclerView) inflater.inflate(R.layout.fragment_episodelist, container, false);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        viewPager = (ViewPager) inflater.inflate(R.layout.fragment_episodelist, container, false);
+        viewPager.setAdapter(new CustomPagerAdapter());
+        if (savedInstanceState != null)
+            viewPager.setCurrentItem(savedInstanceState.getInt(STATE_VIEWPAGER_CURRENT_ITEM, 0));
 
-        Observable<Podcast> podcastObservable = Observable.just(podcastCode)
-                .subscribeOn(Schedulers.io())
-                .map((code) -> Podcast.read(app.getDbHelper(), code))
-                .observeOn(AndroidSchedulers.mainThread());
+        tabLayout = new TabLayout(getContext());
+        tabLayout.setTabTextColors(Color.WHITE, Color.WHITE);
+        tabLayout.setupWithViewPager(viewPager);
+        ((AppBarLayout) getActivity().findViewById(R.id.appbarlayout_layout_main_appbar)).addView(tabLayout);
 
-        Observable<Cursor> episodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                .subscribeOn(Schedulers.io())
-                .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
-                .observeOn(AndroidSchedulers.mainThread());
+        return viewPager;
+    }
 
-        Observable
-                .zip(podcastObservable, episodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
-                .subscribe(adapter -> recyclerView.setAdapter(adapter));
-
-        return recyclerView;
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ((AppBarLayout) getActivity().findViewById(R.id.appbarlayout_layout_main_appbar)).removeView(tabLayout);
     }
 
     @Override
@@ -99,7 +102,105 @@ public class EpisodeListFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+
         mListener = null;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putInt(STATE_VIEWPAGER_CURRENT_ITEM, viewPager.getCurrentItem());
+    }
+
+    /**
+     * CustomPagerAdapter manages two pages: new episode list and all episode list.
+     * Each of them contains one RecycledView.
+     */
+    private class CustomPagerAdapter extends PagerAdapter {
+
+        private final static int NEW_EPISODES_PAGE = 0;
+        private final static int ALL_EPISODES_PAGE = 1;
+
+        private final static int PAGE_COUNT = 2;
+
+        RecyclerView[] views = new RecyclerView[PAGE_COUNT];
+
+        CustomPagerAdapter() {
+            views[NEW_EPISODES_PAGE] = new RecyclerView(getContext());
+            views[NEW_EPISODES_PAGE].setLayoutManager(new LinearLayoutManager(getContext()));
+            views[NEW_EPISODES_PAGE].setItemAnimator(new DefaultItemAnimator());
+            views[NEW_EPISODES_PAGE].setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+            views[ALL_EPISODES_PAGE] = new RecyclerView(getContext());
+            views[ALL_EPISODES_PAGE].setLayoutManager(new LinearLayoutManager(getContext()));
+            views[ALL_EPISODES_PAGE].setItemAnimator(new DefaultItemAnimator());
+            views[ALL_EPISODES_PAGE].setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+            EMApplication app = (EMApplication)getActivity().getApplication();
+            UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
+
+            // Podcast.read
+            Observable<Podcast> podcastObservable = Observable.just(podcastCode)
+                    .subscribeOn(Schedulers.io())
+                    .map((code) -> Podcast.read(app.getDbHelper(), code))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .cache();
+
+            // Episode.readNewByPodcastCode
+            Observable<Cursor> newEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                    .subscribeOn(Schedulers.io())
+                    .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode))
+                    .observeOn(AndroidSchedulers.mainThread());
+
+            // Podcast.read + Episode.readNewByPodcastCode
+            Observable
+                    .zip(podcastObservable, newEpisodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
+                    .subscribe(adapter -> views[NEW_EPISODES_PAGE].setAdapter(adapter));
+
+
+            // Episode.readAllByPodcastCode
+            Observable<Cursor> allEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                    .subscribeOn(Schedulers.io())
+                    .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
+                    .observeOn(AndroidSchedulers.mainThread());
+
+            // Podcast.read + Episode.readAllByPodcastCode
+            Observable
+                    .zip(podcastObservable, allEpisodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
+                    .subscribe(adapter -> views[ALL_EPISODES_PAGE].setAdapter(adapter));
+        }
+
+        @Override
+        public int getCount() {
+            return PAGE_COUNT;
+        }
+
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            container.addView(views[position]);
+            return views[position];
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            container.removeView(views[position]);
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == object;
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) { // TODO Add resources
+            switch (position) {
+                case NEW_EPISODES_PAGE:
+                    return "New";
+                case ALL_EPISODES_PAGE:
+                    return "All";
+                default:
+                    return super.getPageTitle(position);
+            }
+        }
     }
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter {
