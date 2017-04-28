@@ -1,29 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_camera"
-            android:title="Import" />
-        <item
-            android:id="@+id/nav_gallery"
-            android:title="Gallery" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:title="Slideshow" />
-        <item
-            android:id="@+id/nav_manage"
-            android:title="Tools" />
-    </group>
-
-    <item android:title="Communicate">
+    <item android:title="Proficiency level">
         <menu>
-            <item
-                android:id="@+id/nav_share"
-                android:title="Share" />
-            <item
-                android:id="@+id/nav_send"
-                android:title="Send" />
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/menuitem_drawer_beginner"
+                    android:title="Beginner" />
+                <item
+                    android:id="@+id/menuitem_drawer_intermediate"
+                    android:title="Intermediate" />
+                <item
+                    android:id="@+id/menuitem_drawer_advanced"
+                    android:title="Advanced" />
+                <item
+                    android:id="@+id/menuitem_drawer_all"
+                    android:title="All levels" />
+            </group>
         </menu>
     </item>
 
