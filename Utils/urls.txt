@@ -26,6 +26,6 @@ http://learningenglish.voanews.com/podcast/?count=20&zoneId=1689
 http://www.bbc.co.uk/programmes/p02pc9s1/episodes/downloads.rss
 http://rss.acast.com/learnenglishwithenglishbanana
 http://learningenglish.voanews.com/podcast/?count=50&zoneId=987
-https://www.merriam-webster.com/wotd/feed/rss2
+;https://www.merriam-webster.com/wotd/feed/rss2
 http://learningenglish.voanews.com/podcast/?count=50&zoneId=986
 http://learningenglish.voanews.com/podcast/?count=50&zoneId=1577

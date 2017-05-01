@@ -93,7 +93,7 @@ public class DbHelper extends SQLiteOpenHelper {
                                             podcast.setRssUrl(value);
                                             break;
                                         case "image_src":
-                                            podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value);
+                                            podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value.substring(0, value.lastIndexOf(".")));
                                             break;
                                     }
                                 }
