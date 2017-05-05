@@ -196,10 +196,16 @@ public final class Episode {
         this.contentUrl = contentUrl;
     }
 
+    /**
+     * Duration in seconds
+     */
     public int getDuration() {
         return duration;
     }
 
+    /**
+     * Duration in seconds
+     */
     public void setDuration(int duration) {
         this.duration = duration;
     }

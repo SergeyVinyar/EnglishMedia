@@ -151,7 +151,15 @@ public final class RssFetcher {
                         episode.setPageUrl(value);
                         break;
                     case "duration": // itunes:duration
-                        episode.setDuration(Integer.valueOf(value));
+                        int duration = 0;
+                        // 1:22:10 or 4930
+                        String[] values = value.split(":");
+                        int k = 1;
+                        for (int i = values.length - 1; i >= 0; i--) {
+                            duration += Integer.valueOf(values[i]) * k;
+                            k = k * 60;
+                        }
+                        episode.setDuration(duration);
                         break;
                 }
             }

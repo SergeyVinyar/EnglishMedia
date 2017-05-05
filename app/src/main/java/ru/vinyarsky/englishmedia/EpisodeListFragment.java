@@ -21,6 +21,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -364,7 +365,7 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.durationView.setText("Remained " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000)); // TODO Move to resource
                 }
 
-                episodeViewHolder.descriptionView.setText(episode.getDescription());
+                episodeViewHolder.descriptionView.setText(Html.fromHtml(episode.getDescription()));
 
                 if (expandedPositions.contains(episodesCursor.getPosition())) {
                     episodeViewHolder.descriptionView.setMaxLines(50);
