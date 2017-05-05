@@ -1,6 +1,9 @@
 package ru.vinyarsky.englishmedia;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -11,6 +14,7 @@ import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.ArraySet;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -36,6 +40,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
+import ru.vinyarsky.englishmedia.media.MediaService;
 
 public class EpisodeListFragment extends Fragment {
 
@@ -46,6 +51,13 @@ public class EpisodeListFragment extends Fragment {
 
     private ViewPager viewPager;
     private TabLayout tabLayout;
+
+    private BroadcastReceiver episodeStatusChangedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ((CustomPagerAdapter) viewPager.getAdapter()).notifyEpisodesChanged();
+        }
+    };
 
     public EpisodeListFragment() {
     }
@@ -97,12 +109,13 @@ public class EpisodeListFragment extends Fragment {
             throw new RuntimeException(context.toString()
                     + " must implement " + OnEpisodeListFragmentListener.class.getSimpleName());
         }
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(episodeStatusChangedReceiver, new IntentFilter(MediaService.EPISODE_STATUS_CHANGED_BROADCAST_ACTION));
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(episodeStatusChangedReceiver);
         mListener = null;
     }
 
@@ -153,7 +166,7 @@ public class EpisodeListFragment extends Fragment {
 
             // Podcast.read + Episode.readNewByPodcastCode
             Observable
-                    .zip(podcastObservable, newEpisodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
+                    .zip(podcastObservable, newEpisodesObservable, EpisodeListFragment.RecyclerViewAdapter::new)
                     .subscribe(adapter -> views[NEW_EPISODES_PAGE].setAdapter(adapter));
 
 
@@ -165,8 +178,30 @@ public class EpisodeListFragment extends Fragment {
 
             // Podcast.read + Episode.readAllByPodcastCode
             Observable
-                    .zip(podcastObservable, allEpisodesObservable, (podcast, episodesCursor) -> new EpisodeListFragment.RecyclerViewAdapter(podcast, episodesCursor))
+                    .zip(podcastObservable, allEpisodesObservable, EpisodeListFragment.RecyclerViewAdapter::new)
                     .subscribe(adapter -> views[ALL_EPISODES_PAGE].setAdapter(adapter));
+        }
+
+        /**
+         * Called by fragment to refresh episodes data in both recycled views
+         */
+        void notifyEpisodesChanged() {
+            EMApplication app = (EMApplication)getActivity().getApplication();
+            UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
+
+            // Episode.readNewByPodcastCode
+            Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                    .subscribeOn(Schedulers.io())
+                    .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe((cursor) -> ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursor));
+
+            // Episode.readAllByPodcastCode
+            Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                    .subscribeOn(Schedulers.io())
+                    .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe((cursor) -> ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursor));
         }
 
         @Override
@@ -216,6 +251,7 @@ public class EpisodeListFragment extends Fragment {
             this.podcast = podcast;
             this.episodesCursor = episodesCursor;
             this.expandedPositions = new ArraySet<>(episodesCursor.getCount());
+            this.setHasStableIds(true);
         }
 
         @Override
@@ -351,6 +387,24 @@ public class EpisodeListFragment extends Fragment {
         @Override
         public int getItemCount() {
             return episodesCursor.getCount() + 1; // + podcast header at position 0
+        }
+
+        @Override
+        public long getItemId(int position) {
+            if (position == 0) { // podcast header
+                return 0;
+            }
+            else {
+                position--;
+                episodesCursor.move(position - episodesCursor.getPosition());
+                // sqlite rowid always starts from 1 => no conflicts with a podcast header
+                return episodesCursor.getLong(episodesCursor.getColumnIndex("_id"));
+            }
+        }
+
+        void swapEpisodesCursor(Cursor cursor) {
+            this.episodesCursor = cursor;
+            this.notifyDataSetChanged();
         }
     }
 

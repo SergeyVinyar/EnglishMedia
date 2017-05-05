@@ -8,6 +8,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -31,7 +32,6 @@ import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -46,18 +46,24 @@ import ru.vinyarsky.englishmedia.db.Podcast;
 
 public class MediaService extends Service implements ExoPlayer.EventListener {
 
-    // TODO Add current position remembering
     // TODO Foreground service
     // TODO Downloading
 
+    // Intent actions for onStartCommand
     private static final String PLAY_PAUSE_TOGGLE_ACTION = "ru.vinyarsky.englishmedia.action.play_pause_toggle";
     private static final String DOWNLOAD_ACTION = "ru.vinyarsky.englishmedia.action.download";
 
-    private static final String EPISODE_CODE_EXTRA = "episode_code";
+    // Intent action for broadcast receivers
+    public static final String EPISODE_STATUS_CHANGED_BROADCAST_ACTION = "ru.vinyarsky.englishmedia.action.episode_status_changed";
+
+    // Intent extra parameter for PLAY_PAUSE_TOGGLE_ACTION, DOWNLOAD_ACTION and EPISODE_STATUS_CHANGED_BROADCAST_ACTION
+    public static final String EPISODE_CODE_EXTRA = "episode_code";
 
     private SimpleExoPlayer player;
     private ExtractorsFactory extractorsFactory;
     private DataSource.Factory dataSourceFactory;
+
+    private LocalBroadcastManager broadcastManager;
 
     private int mountedViewCount = 0;
 
@@ -89,6 +95,8 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         this.dataSourceFactory = new CacheDataSourceFactory(cache, httpDataSourceFactory, CacheDataSource.FLAG_BLOCK_ON_CACHE | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
 
         this.extractorsFactory = new DefaultExtractorsFactory();
+
+        this.broadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
     }
 
     @Override
@@ -253,22 +261,32 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
                     EMApplication app = (EMApplication) getApplication();
                     Episode episode = Episode.read(app.getDbHelper(), (UUID) data[0]);
                     if (episode != null) {
+                        Episode.EpisodeStatus oldStatus = episode.getStatus();
+
                         episode.setCurrentPosition((int)((Long) data[1] / 1000));
                         if (((Long)data[1]).compareTo(episode.getDuration() * 1000L) >= 0) {
                             episode.setStatus(Episode.EpisodeStatus.COMPLETED);
                             episode.setCurrentPosition(0); // Next time we listen from the beginning
                         }
                         else {
-                            episode.setStatus(Episode.EpisodeStatus.LISTENING);
+                            // No LISTENING for already COMPLETED episodes
+                            if(Episode.EpisodeStatus.NEW.equals(episode.getStatus()))
+                                episode.setStatus(Episode.EpisodeStatus.LISTENING);
                         }
+
                         episode.write(app.getDbHelper());
+
+                        if (!episode.getStatus().equals(oldStatus)) {
+                            broadcastEmitEpisodeStatusChanged(episode.getCode());
+                        }
+
                         return episode.getStatus();
                     }
                     return Episode.EpisodeStatus.COMPLETED;
                 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((status) -> {
-                    if (status.equals(Episode.EpisodeStatus.COMPLETED)) {
+                    if (Episode.EpisodeStatus.COMPLETED.equals(status)) {
                         this.currentEpisodeCode = null;
                         this.mediaServiceEventManager.onEpisodeChanged(null, null);
                     }
@@ -279,6 +297,12 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
      * System.nanoTime value of the latest saveCurrentPosition saving
      */
     private long lastSaveCurrentPositionNanoTime = 0;
+
+    private void broadcastEmitEpisodeStatusChanged(UUID episodeCode) {
+        Intent broadcast_intent = new Intent(EPISODE_STATUS_CHANGED_BROADCAST_ACTION);
+        broadcast_intent.putExtra(EPISODE_CODE_EXTRA, episodeCode);
+        this.broadcastManager.sendBroadcast(broadcast_intent);
+    }
 
     public class MediaServiceBinder extends Binder {
 
