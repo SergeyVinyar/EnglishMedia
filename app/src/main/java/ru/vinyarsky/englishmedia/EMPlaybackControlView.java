@@ -28,7 +28,7 @@ public class EMPlaybackControlView extends PlaybackControlView {
             behavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         }
         else {
-            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             behavior.setHideable(false);
         }
     };
