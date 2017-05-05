@@ -282,9 +282,17 @@ public class EpisodeListFragment extends Fragment {
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
                         podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_uk);
                         break;
-                    case USA:
+                    case US:
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
-                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_usa);
+                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_us);
+                        break;
+                    case CZ:
+                        podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
+                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_cz);
+                        break;
+                    case DK:
+                        podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
+                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_dk);
                         break;
                     default:
                         podcastHeaderViewHolder.flagView.setVisibility(View.INVISIBLE);
@@ -365,7 +373,10 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.durationView.setText("Remained " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000)); // TODO Move to resource
                 }
 
-                episodeViewHolder.descriptionView.setText(Html.fromHtml(episode.getDescription()));
+                if (episode.getDescription() != null)
+                    episodeViewHolder.descriptionView.setText(Html.fromHtml(episode.getDescription()));
+                else
+                    episodeViewHolder.descriptionView.setText("");
 
                 if (expandedPositions.contains(episodesCursor.getPosition())) {
                     episodeViewHolder.descriptionView.setMaxLines(50);

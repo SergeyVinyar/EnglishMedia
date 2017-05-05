@@ -1,17 +1,12 @@
 <podcasts>
     <podcast>
         <code>dfc3e061-1497-4dcf-90c1-cf70c557f124</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>CZ</country>
+        <level>BEGINNER</level>
         <title>Zdenek's English Podcast</title>
-        <description>
-   I'm an English teacher from the Czech Republic (Europe) and I record podcasts for all learners of English as a second language.
-
+        <description>I'm an English teacher from the Czech Republic (Europe) and I record podcasts for all learners of English as a second language.
 To be honest, I started doing this to improve my own English but I'll, in fact, be elated and proud if someone actually finds this interesting and beneficial for themselves. Everyone is welcome to listen, post comments, contact me and support me.
-
-As a matter of fact, the newest format of Zdenek's English Podcast podcast was inspired by "Luke's English Podcast", my only true teacher, guide and podcasting god, who kindly gave me his permission to do this. Without him, this project would never be possible.
-
-</description>
+As a matter of fact, the newest format of Zdenek's English Podcast podcast was inspired by "Luke's English Podcast", my only true teacher, guide and podcasting god, who kindly gave me his permission to do this. Without him, this project would never be possible.</description>
         <rss_url>https://audioboom.com/channels/2561524.rss</rss_url>
         <image_src>pod_28012803.jpg</image_src>
     </podcast>
@@ -26,8 +21,8 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
     </podcast>
     <podcast>
         <code>c5036352-d1e2-491d-aec2-1b8f2679e152</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>DK</country>
+        <level>ADVANCED</level>
         <title>The Actual Fluency Podcast for Language Learners</title>
         <description>Join Kris on the Actual Fluency Podcast as he sets out to inspire, motivate and teach you how to learn languages and hopefully become a hyper polyglot. In the process he is joined by some of the most well-known language experts in the world, who chip in with their personal opinion on what it takes to evolve as a language learner today. Kris is a language learner himself, so any ninja tips or methods he uncovers are shared in this Podcast as well, including reviews and impressions of language learning services, tools, software and courses.</description>
         <rss_url>http://actualfluency.com/feed/podcast/</rss_url>
@@ -36,7 +31,7 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
     <podcast>
         <code>167928d4-ae0f-4b08-852b-d55d80fcb9b1</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>ADVANCED</level>
         <title>London School of Economics: Public lectures and events</title>
         <description>Audio podcasts from LSE's programme of public lectures and events.</description>
         <rss_url>http://www.lse.ac.uk/assets/richmedia/webFeeds/publicLecturesAndEvents_iTunesStore.xml</rss_url>
@@ -44,8 +39,8 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
     </podcast>
     <podcast>
         <code>7e033a1c-887e-490a-b1b7-261cbed5c656</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>ADVANCED</level>
         <title>Accidental Tech Podcast</title>
         <description>Three nerds discussing tech, Apple, programming, and loosely related matters.</description>
         <rss_url>http://atp.fm/episodes?format=rss</rss_url>
@@ -53,8 +48,8 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
     </podcast>
     <podcast>
         <code>d75745c2-41a5-4545-bd9c-2f143c399bf6</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>ADVANCED</level>
         <title>Soft Skills Engineering</title>
         <description>It takes more than code to be a great engineer. We discuss all of it. Soft Skills Engineering is a weekly question and answer podcast where we answer questions about all of the non-technical things that go along with being a software developer.</description>
         <rss_url>http://feeds.feedburner.com/SoftSkillsEngineering</rss_url>
@@ -63,10 +58,9 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
     <podcast>
         <code>02da8b08-84da-4d6d-a8af-7cea636e84bd</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>ADVANCED</level>
         <title>Intelligence Squared</title>
         <description>Intelligence Squared is the world&#8217;s leading forum for debate and intelligent discussion. Live and online we take you to the heart of the issues that matter, in the company of some of the world&#8217;s sharpest minds and most exciting orators. 
-
 Join the debate at www.intelligencesquared.com and download our weekly podcast every Friday.</description>
         <rss_url>http://rss.acast.com/intelligencesquared</rss_url>
         <image_src>pod_avatars_000061812247_5f6gf8_original_irqe0gbx.png</image_src>
@@ -77,9 +71,7 @@ Join the debate at www.intelligencesquared.com and download our weekly podcast e
         <level>INTERMEDIATE</level>
         <title>A Phrasal Verb a Day</title>
         <description>Learn a phrasal verb every day with this series of short podcasts by Luke Thompson from Luke&#8217;s English Podcast.
-
 Each episode contains definitions, explanations and improvised examples of each phrase to help you understand and remember these complex but important parts of the English language!
-
 Transcripts are available at http://teacherluke.co.uk/phrasal-verb-a-day/</description>
         <rss_url>https://audioboom.com/channels/2546496.rss</rss_url>
         <image_src>pod_28012731.jpg</image_src>
@@ -90,18 +82,15 @@ Transcripts are available at http://teacherluke.co.uk/phrasal-verb-a-day/</descr
         <level>INTERMEDIATE</level>
         <title>Luke's ENGLISH Podcast - Learn British English with Luke Thompson</title>
         <description>Luke's English Podcast is an award-winning podcast for learners of English.
-
 Listen, learn and have fun while picking up natural British English as it really is spoken.
-
 http://teacherluke.co.uk
-
 &lt;img src="http://teacherluke.co.uk/wp-content/uploads/2014/09/10679850_4629218585900_8637988205879675701_o2-e1411492474536.jpg" style="max-width:100%" alt="Luke" /&gt;</description>
         <rss_url>http://teacherluke.libsyn.com/rss</rss_url>
         <image_src>pod_28012134.jpg</image_src>
     </podcast>
     <podcast>
         <code>2584ddbd-0119-41be-b467-8b5159780eb8</code>
-        <country>UK</country>
+        <country>US</country>
         <level>INTERMEDIATE</level>
         <title>All Ears English Podcast | Real English Vocabulary | Conversation | American Culture</title>
         <description>Are you looking for a new and fun way to learn American English? Come hang out with Lindsay and Michelle from Boston and New York City and have fun while you improve your English listening skills! All Ears English is an English as a Second Language (ESL) podcast for intermediate to advanced learners around the world. Teachers Lindsay McMahon and Michelle Kaplan will show you how to use everyday vocabulary and natural idioms, expressions, and phrasal verbs and how to make small talk in American English. We will also give you special tips on American culture, customs, etiquette, and how to speak with Americans as well as conversation and commentary on study tips, life in America and Boston, how to apply to university in the US, dating, travel, food and more. You'll get TOEFL, IELTS, and TOEIC help also from The Examiner of Excellence, Jessica Beck. This podcast is for adult students who are professionals and university students as well as ESL teachers. Join Lindsay and Michelle and the All Ears English community to learn to speak American English like a native! Connection NOT Perfection!</description>
@@ -110,7 +99,7 @@ http://teacherluke.co.uk
     </podcast>
     <podcast>
         <code>9eaf5b71-5654-4a6c-98f6-09624f1eb4ea</code>
-        <country>UK</country>
+        <country>US</country>
         <level>INTERMEDIATE</level>
         <title>Let's Master English! An English podcast for English learners</title>
         <description>The Let's Master English podcast is for ESL (English as a Second Language) learners! This podcast has many features--news, Q&amp;A, English learning advice and other fun sections. You can join the Let's Master English community on Google+ and see the full transcripts. Transcripts are made by you, the listeners! I hope you enjoy my podcasts and please visit my website--www.letsmasterenglish.com!</description>
@@ -119,8 +108,8 @@ http://teacherluke.co.uk
     </podcast>
     <podcast>
         <code>5026fc46-0436-428c-ad85-f1947309185e</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>English as a Second Language (ESL) Podcast - Learn English Online</title>
         <description>A podcast for those wanting to learn or improve their English - great for any ESL or EFL learner. Visit us at http://www.eslpod.com.</description>
         <rss_url>http://feeds.feedburner.com/EnglishAsASecondLanguagePodcast</rss_url>
@@ -129,7 +118,7 @@ http://teacherluke.co.uk
     <podcast>
         <code>6b6c5d25-fe5c-4b9b-bee2-202a7ef06acf</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>BEGINNER</level>
         <title>6 Minute English</title>
         <description>Learn and practise useful English language for everyday situations with the BBC. A weekly instruction manual for saying or doing something in English is published every Thursday.</description>
         <rss_url>http://www.bbc.co.uk/programmes/p02pc9tn/episodes/downloads.rss</rss_url>
@@ -137,18 +126,17 @@ http://teacherluke.co.uk
     </podcast>
     <podcast>
         <code>efc70631-281e-4442-bda7-7d3b9d68c71b</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>Effortless English Podcast | Learn English with AJ Hoge</title>
         <description>The Effortless English Show with AJ Hoge teaches you to speak English powerfully.  AJ is the author of "Effortless English: Learn To Speak English Like A Native" and is known as "The World's #1 English Teacher".  
-
 Learn English. Learn English vocabulary. Learn about American culture. </description>
         <rss_url>http://effortlessenglish.libsyn.com/rss</rss_url>
         <image_src>pod_podcast_big.jpg</image_src>
     </podcast>
     <podcast>
         <code>441bd24b-d55f-420b-8b14-411c007c8fd6</code>
-        <country>UK</country>
+        <country>US</country>
         <level>INTERMEDIATE</level>
         <title>Go Natural English Podcast | How to Speak Fluent English</title>
         <description>Go Natural English helps you improve your English listening skills and fluency. The podcast will benefit intermediate to advanced learners most. Your English will benefit from language learning strategies that work, vocabulary and idioms, expressions, and phrasal verbs and how to make small talk and real conversation in American English. Learn special tips on American culture, how to listen to and speak with Americans. Join Gabby and the Go Natural English community to learn to speak American English like a fluent native!</description>
@@ -157,8 +145,8 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>8d7d1e97-5fbe-4d1f-9e88-29233217a58a</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>American English Pronunciation Podcast</title>
         <description>The American English Pronunciation podcasts teaches non-native English speakers and ESL/ELL students correct English pronunciation in short lessons. Learn, listen, repeat!</description>
         <rss_url>http://feeds.soundcloud.com/users/soundcloud:users:211495990/sounds.rss</rss_url>
@@ -166,7 +154,7 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>8492432f-64ad-4fd9-bb0d-6ab39a490746</code>
-        <country>UK</country>
+        <country>US</country>
         <level>INTERMEDIATE</level>
         <title>Daily Easy English Expression Podcast</title>
         <description>Every day I will introduce a common expression or word that YOU NEED TO KNOW!! This podcast is for English learners around the world. </description>
@@ -175,8 +163,8 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>5f980536-f6d2-49fa-b53d-5aad97aee321</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>Learn English | EnglishClass101.com</title>
         <description>Learn English with Free Podcasts! Whether you are student or a seasoned speaker, our lessons offer something for everyone. We incorporate culture and current issues into each episode to give the most informative, both linguistically and culturally, podcasts possible.  For those of you with just the plane ride to prepare, check our survival phrase series at EnglishClass101.com. One of these phrases just might turn your trip into the best one ever!</description>
         <rss_url>https://www.englishclass101.com/wp-feed-audio-video.php</rss_url>
@@ -184,8 +172,8 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>4f0d5f6d-8667-4dab-bdb7-a08acb8e83b0</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>Down to Business English: Business News to Improve your Business English</title>
         <description>A podcast for people who use English as a Second Language (ESL) in their work environment and want to improve their overall language skills. In each episode, hosts Dez Morgan and Skip Montreux discuss Business news making headlines around the world.  Through their discussions, Skip and Dez introduce English vocabulary &amp; phrases related to business, review grammar, and identify cultural differences found in International business situations. An excellent way to improve listening skills, keep up with business trends, and advance your career.</description>
         <rss_url>https://downtobusinessenglish.com/rss.xml</rss_url>
@@ -194,7 +182,7 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     <podcast>
         <code>1fa686db-35da-4b16-ba19-b13edf1438a5</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>BEGINNER</level>
         <title>The English We Speak</title>
         <description>Every week, we look at a different everyday English phrase or piece of slang in this fun three-minute programme. From BBC World Service</description>
         <rss_url>http://www.bbc.co.uk/programmes/p02pc9zn/episodes/downloads.rss</rss_url>
@@ -203,7 +191,7 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     <podcast>
         <code>52d73407-f516-45d6-bf6a-de5aed08f671</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>BEGINNER</level>
         <title>IELTS podcast</title>
         <description>Pass IELTS with expert help.</description>
         <rss_url>http://www.ieltspodcast.com/feed/podcast/</rss_url>
@@ -211,8 +199,8 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>9c7b6919-b6bf-467b-84a2-8dd7c87a26ed</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>ADVANCED</level>
         <title>TEDTalks (audio)</title>
         <description>Want TED Talks on the go? Every week, this feed brings you our latest talks in audio format. Hear thought-provoking ideas on every subject imaginable &#8211; from Artificial Intelligence to Zoology, and everything in between &#8211; given by the world's leading thinkers and doers. This collection of talks, given at TED and TEDx conferences around the globe, is also available in video format.</description>
         <rss_url>http://feeds.feedburner.com/TEDTalks_audio</rss_url>
@@ -220,7 +208,7 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>7490657e-1463-423b-9c17-f817d514f18d</code>
-        <country>UK</country>
+        <country>US</country>
         <level>INTERMEDIATE</level>
         <title>The Public Speaker's Quick and Dirty Tips for Improving Your Communication Skills</title>
         <description>The Public Speaker helps you to inform, motivate, entertain, and persuade better. Lisa B. Marshall, author of "Smart Talk: The Public Speaker's Guide to Success in Every Situation," has short, practical tips that help you to be engaging and memorable every time you speak. It's not just about public speaking, it's about effective communication. </description>
@@ -230,7 +218,7 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     <podcast>
         <code>8120a321-cd74-4050-9b2d-7479fcc44bf1</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>BEGINNER</level>
         <title>10 English Idioms in 10 Minutes!</title>
         <description>Because English idioms don't have to be dull...!</description>
         <rss_url>http://rss.acast.com/10englishidioms</rss_url>
@@ -238,11 +226,10 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
     </podcast>
     <podcast>
         <code>1b31f22e-3a1b-4b67-8392-db9ba9c23966</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>Learning English Broadcast - Voice of America</title>
-        <description>
-Learning English programs use a limited vocabulary and short sentences. They are read at a slower pace than VOA&amp;#39;s other English broadcasts. Our broadcasts were formerly known as Special English.</description>
+        <description>Learning English programs use a limited vocabulary and short sentences. They are read at a slower pace than VOA&amp;#39;s other English broadcasts. Our broadcasts were formerly known as Special English.</description>
         <rss_url>http://learningenglish.voanews.com/podcast/?count=20&amp;zoneId=1689</rss_url>
         <image_src>pod_d7f3a3b9_539b_449d_95d2_a3101788cb3d.jpg</image_src>
     </podcast>
@@ -258,7 +245,7 @@ Learning English programs use a limited vocabulary and short sentences. They are
     <podcast>
         <code>0b92a752-ae12-4da5-8781-0547527d6e23</code>
         <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <level>BEGINNER</level>
         <title>#englishbanana Free English Podcast</title>
         <description>This is a great free podcast for students and teachers of English, ESL, EFL, and ESOL. This educational podcast delivers interesting weekly lessons on a range of ELT topics, such as grammar, vocabulary, speaking, listening, pronunciation, and more! Matt welcomes your feedback, so if you have comments or suggestions for future podcasts, please do get in touch with him via Twitter: @englishbanana</description>
         <rss_url>http://rss.acast.com/learnenglishwithenglishbanana</rss_url>
@@ -266,8 +253,8 @@ Learning English programs use a limited vocabulary and short sentences. They are
     </podcast>
     <podcast>
         <code>e01ff319-d080-4f66-aac3-fdde86868776</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>Words and Their Stories - Voice of America</title>
         <description>Words and Their Stories programs explain idioms and expressions that many learners of American English find difficult to understand.</description>
         <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=987</rss_url>
@@ -275,8 +262,8 @@ Learning English programs use a limited vocabulary and short sentences. They are
     </podcast>
     <podcast>
         <code>fa6637d5-1e6b-4341-93ce-e12794b99d96</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>American Mosaic - Voice of America</title>
         <description>American Mosaic is our weekly program about music, pop culture and life in the United States.</description>
         <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=986</rss_url>
@@ -284,11 +271,10 @@ Learning English programs use a limited vocabulary and short sentences. They are
     </podcast>
     <podcast>
         <code>77abe303-2a1b-4a67-84ab-630ba3364f7a</code>
-        <country>UK</country>
-        <level>INTERMEDIATE</level>
+        <country>US</country>
+        <level>BEGINNER</level>
         <title>In the News - Voice of America</title>
-        <description>
-In the News explains the main news stories of the day to help make sense of our world.</description>
+        <description>In the News explains the main news stories of the day to help make sense of our world.</description>
         <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=1577</rss_url>
         <image_src>pod_ebc3b497_2e32_4f9e_ac0a_2ceab7ceace2.jpg</image_src>
     </podcast>

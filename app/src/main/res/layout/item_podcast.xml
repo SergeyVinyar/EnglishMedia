@@ -136,7 +136,7 @@
             android:layout_height="18dp"
             app:layout_constraintLeft_toLeftOf="@+id/guideline_item_podcast_left"
             app:layout_constraintTop_toTopOf="@+id/textview_item_podcast_level"
-            app:srcCompat="@drawable/flag_usa" />
+            app:srcCompat="@drawable/flag_us" />
 
         <TextView
             android:id="@+id/textview_item_podcast_more"

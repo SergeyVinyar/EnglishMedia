@@ -9,19 +9,14 @@ import android.provider.MediaStore;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.ArraySet;
-import android.support.v4.widget.CursorAdapter;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Space;
 
@@ -123,9 +118,17 @@ public class PodcastListFragment extends Fragment {
                     holder.flagView.setVisibility(View.VISIBLE);
                     holder.flagView.setImageResource(R.drawable.flag_uk);
                     break;
-                case USA:
+                case US:
                     holder.flagView.setVisibility(View.VISIBLE);
-                    holder.flagView.setImageResource(R.drawable.flag_usa);
+                    holder.flagView.setImageResource(R.drawable.flag_us);
+                    break;
+                case CZ:
+                    holder.flagView.setVisibility(View.VISIBLE);
+                    holder.flagView.setImageResource(R.drawable.flag_cz);
+                    break;
+                case DK:
+                    holder.flagView.setVisibility(View.VISIBLE);
+                    holder.flagView.setImageResource(R.drawable.flag_dk);
                     break;
                 default:
                     holder.flagView.setVisibility(View.INVISIBLE);

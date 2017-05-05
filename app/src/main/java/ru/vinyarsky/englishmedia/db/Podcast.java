@@ -191,5 +191,5 @@ public final class Podcast {
 
     public enum PodcastLevel { BEGINNER, INTERMEDIATE, ADVANCED }
 
-    public enum Country { NONE, UK, USA }
+    public enum Country { NONE, UK, US, CZ, DK }
 }
