@@ -1,8 +1,12 @@
 package ru.vinyarsky.englishmedia.media;
 
+import android.app.Notification;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
@@ -14,6 +18,7 @@ import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
@@ -23,6 +28,7 @@ import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.ui.PlaybackControlView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.cache.Cache;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
@@ -41,12 +47,12 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.EMApplication;
 import ru.vinyarsky.englishmedia.EMPlaybackControlView;
+import ru.vinyarsky.englishmedia.R;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
 public class MediaService extends Service implements ExoPlayer.EventListener {
 
-    // TODO Foreground service
     // TODO Downloading
 
     // Intent actions for onStartCommand
@@ -72,6 +78,33 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     private Handler releaseDelayedHandler = new Handler();
 
     public final MediaServiceEventManagerImpl mediaServiceEventManager = new MediaServiceEventManagerImpl();
+
+    private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Disconnecting headphones - stop playback
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                if (player != null && player.getPlayWhenReady())
+                    player.setPlayWhenReady(false);
+            }
+        }
+    };
+
+    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            // No duck support because we primarily play speech (not music),
+            // i.e. we always stop playing
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    player.setPlayWhenReady(true);
+                    break;
+                default:
+                    player.setPlayWhenReady(false);
+                    break;
+            }
+        }
+    };
 
     public static Intent newPlayPauseToggleIntent(Context appContext, UUID episodeCode) {
         Intent intent = new Intent(PLAY_PAUSE_TOGGLE_ACTION, null, appContext, MediaService.class);
@@ -116,13 +149,22 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
                         .subscribe((episode) -> {
                             initPlayer();
                             if (episode.getCode().equals(this.currentEpisodeCode)) {
-                                this.player.setPlayWhenReady(!this.player.getPlayWhenReady());
+                                boolean newPlayWhenReady = !this.player.getPlayWhenReady();
+                                if (newPlayWhenReady) {
+                                    if (requestAudioFocus())
+                                        this.player.setPlayWhenReady(true);
+                                }
+                                else {
+                                    this.player.setPlayWhenReady(false);
+                                    abandonAudioFocus();
+                                }
                             } else {
                                 ExtractorMediaSource mediaSource = new ExtractorMediaSource(Uri.parse(episode.getContentUrl()), this.dataSourceFactory, this.extractorsFactory, null, null);
                                 this.player.seekTo(episode.getCurrentPosition() * 1000);
                                 this.player.prepare(mediaSource);
-                                this.player.setPlayWhenReady(true);
                                 this.currentEpisodeCode = episode.getCode();
+                                if (requestAudioFocus())
+                                    this.player.setPlayWhenReady(true);
                                 Observable.just(episode.getPodcastCode())
                                         .subscribeOn(Schedulers.io())
                                         .map((podcastCode) -> Podcast.read(((EMApplication) getApplication()).getDbHelper(), podcastCode))
@@ -162,7 +204,7 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     private synchronized void initPlayer() {
         if (this.player == null) {
             this.player = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector(), new DefaultLoadControl());
-            this.player.setPlayWhenReady(true);
+            this.player.setPlayWhenReady(false);
             this.player.addListener(this);
         }
     }
@@ -222,8 +264,32 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
                 || (playbackState == ExoPlayer.STATE_ENDED))
         {
             saveCurrentPosition(true);
-            this.releaseDelayedHandler.postDelayed(this::releasePlayer, 1000 * 60 * 5);
+            this.releaseDelayedHandler.postDelayed(this::releasePlayer, 1000 * 60 * 5); // 5 mins
         }
+
+        if (playWhenReady) {
+            registerReceiver(this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+            Notification notification = new Notification.Builder(this)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("EnglishMedia playback") // TODO Add to resource
+                    .build();
+            startForeground(123, notification);
+        } else {
+            stopForeground(true);
+            try {
+                unregisterReceiver(this.becomingNoisyReceiver);
+            } catch (IllegalArgumentException e) {
+                // Do nothing.
+                // onPlayerStateChanged is called multiple times with different playbackState,
+                // so it can be called with playWhenReady == false more then once and
+                // we unregister not registered receiver.
+            }
+        }
+    }
+
+    @Override
+    public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+        // Do nothing
     }
 
     @Override
@@ -304,6 +370,20 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         this.broadcastManager.sendBroadcast(broadcast_intent);
     }
 
+    /**
+     * @return true - success
+     */
+    private boolean requestAudioFocus() {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        int result = audioManager.requestAudioFocus(this.audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+    }
+
+    private void abandonAudioFocus() {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        audioManager.abandonAudioFocus(this.audioFocusChangeListener);
+    }
+
     public class MediaServiceBinder extends Binder {
 
         public void mountPlaybackControlView(EMPlaybackControlView view) {
@@ -311,12 +391,36 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
             MediaService.this.mountedViewCount++;
             view.setPlayer(MediaService.this.player);
             view.setMediaServiceEventManager(MediaService.this.mediaServiceEventManager);
+            view.setControlDispatcher(new PlaybackControlView.ControlDispatcher() {
+
+                @Override
+                public boolean dispatchSetPlayWhenReady(ExoPlayer player, boolean playWhenReady) {
+                    if (playWhenReady) {
+                        boolean result = requestAudioFocus();
+                        if (result)
+                            player.setPlayWhenReady(true);
+                        return result;
+                    }
+                    else {
+                        abandonAudioFocus();
+                        player.setPlayWhenReady(false);
+                        return true;
+                    }
+                }
+
+                @Override
+                public boolean dispatchSeekTo(ExoPlayer player, int windowIndex, long positionMs) {
+                    player.seekTo(windowIndex, positionMs);
+                    return true;
+                }
+            });
         }
 
         public void unMountPlaybackControlView(EMPlaybackControlView view) {
             MediaService.this.mountedViewCount--;
             view.setPlayer(null);
             view.setMediaServiceEventManager(null);
+            view.setControlDispatcher(null);
         }
     }
 
