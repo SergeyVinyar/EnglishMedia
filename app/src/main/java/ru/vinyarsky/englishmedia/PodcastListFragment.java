@@ -31,13 +31,27 @@ import ru.vinyarsky.englishmedia.db.Podcast;
 
 public class PodcastListFragment extends Fragment {
 
+    private static final String PODCAST_LEVEL_ARG = "podcast_level";
+
+    private static final String PODCAST_LEVEL_ARG_ALL_VALUE = "all";
+
     private OnPodcastListFragmentListener mListener;
 
     public PodcastListFragment() {
     }
 
-    public static PodcastListFragment newInstance() {
-        return new PodcastListFragment();
+    /**
+     * Show podcasts with given podcastLevel
+     * @param podcastLevel show all podcasts if null
+     */
+    public static PodcastListFragment newInstance(Podcast.PodcastLevel podcastLevel) {
+        PodcastListFragment fragment = new PodcastListFragment();
+
+        Bundle args = new Bundle();
+        args.putString(PODCAST_LEVEL_ARG, podcastLevel != null ? podcastLevel.name() : PODCAST_LEVEL_ARG_ALL_VALUE);
+
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -57,7 +71,15 @@ public class PodcastListFragment extends Fragment {
         EMApplication app = (EMApplication) getActivity().getApplication();
 
         Observable.<Cursor>create((e) -> {
-            e.onNext(Podcast.readAll(app.getDbHelper()));
+            Cursor cursor = null;
+
+            String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
+            if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
+                cursor = Podcast.readAll(app.getDbHelper());
+            else
+                cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
+
+            e.onNext(cursor);
             e.onComplete();
         })
                 .subscribeOn(Schedulers.io())

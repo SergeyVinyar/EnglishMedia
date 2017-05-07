@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -22,6 +23,7 @@ import ru.vinyarsky.englishmedia.EMPlaybackControlView;
 
 import java.util.UUID;
 
+import ru.vinyarsky.englishmedia.db.Podcast;
 import ru.vinyarsky.englishmedia.media.MediaService;
 
 public class MainActivity extends AppCompatActivity
@@ -29,6 +31,10 @@ public class MainActivity extends AppCompatActivity
             NavigationView.OnNavigationItemSelectedListener,
             PodcastListFragment.OnPodcastListFragmentListener,
             EpisodeListFragment.OnEpisodeListFragmentListener {
+
+    private static final String PODCASTLEVEL_PREFERENCE = "podcast_level";
+
+    private static final String PODCASTLEVEL_PREFERENCE_ALL_VALUE = "all";
 
     private ServiceConnection mediaServiceConnection = new ServiceConnection() {
         @Override
@@ -67,13 +73,11 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);
-        if (fragment == null) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.framelayout_layout_main_appbar_fragment, PodcastListFragment.newInstance())
-                    .commit();
-        }
+        String podcastLevelName = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE).getString(PODCASTLEVEL_PREFERENCE, PODCASTLEVEL_PREFERENCE_ALL_VALUE);
+        if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName))
+            showPodcastList(null);
+        else
+            showPodcastList(Podcast.PodcastLevel.valueOf(podcastLevelName));
     }
 
     @Override
@@ -120,25 +124,31 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
+        Podcast.PodcastLevel podcastLevel;
+        switch (item.getItemId()) {
+            case R.id.menuitem_drawer_beginner:
+                podcastLevel = Podcast.PodcastLevel.BEGINNER;
+                break;
+            case R.id.menuitem_drawer_intermediate:
+                podcastLevel = Podcast.PodcastLevel.INTERMEDIATE;
+                break;
+            case R.id.menuitem_drawer_advanced:
+                podcastLevel = Podcast.PodcastLevel.ADVANCED;
+                break;
+            case R.id.menuitem_drawer_all:
+                podcastLevel = null;
+                break;
+            default:
+                return false;
+        }
+        showPodcastList(podcastLevel);
 
-//        if (id == R.id.nav_camera) {
-//            // Handle the camera action
-//        } else if (id == R.id.nav_gallery) {
-//
-//        } else if (id == R.id.nav_slideshow) {
-//
-//        } else if (id == R.id.nav_manage) {
-//
-//        } else if (id == R.id.nav_share) {
-//
-//        } else if (id == R.id.nav_send) {
-//
-//        }
+        getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE)
+                .edit()
+                .putString(PODCASTLEVEL_PREFERENCE, podcastLevel != null ? podcastLevel.name() : PODCASTLEVEL_PREFERENCE_ALL_VALUE)
+                .apply();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         drawer.closeDrawer(GravityCompat.START);
@@ -147,6 +157,56 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSelectPodcast(UUID podcastCode) {
+        showEpisodeList(podcastCode);
+    }
+
+    @Override
+    public void onPlayPauseEpisode(UUID episodeCode) {
+        Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), episodeCode);
+        startService(intent);
+    }
+
+    /**
+     * Returns id of a backstack entry for a fragment with particular tag.
+     * -1 if not found.
+     */
+    private int getBackstackEntryIdForFragmentTag(String tag) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        for (int id = 0; id < fragmentManager.getBackStackEntryCount(); id++)
+            if (tag.equals(fragmentManager.getBackStackEntryAt(id).getName()))
+                return id;
+        return -1;
+    }
+
+    /**
+     * @param podcastLevel Show all podcasts if null
+     */
+    private void showPodcastList(Podcast.PodcastLevel podcastLevel) {
+        String fragmentTag = PodcastListFragment.class.getName();
+        if (podcastLevel != null)
+            fragmentTag += "_" + podcastLevel.name();
+
+        int fragmentId = getBackstackEntryIdForFragmentTag(fragmentTag);
+        if (fragmentId == -1) {
+            Fragment oldFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);;
+            Fragment newFragment = PodcastListFragment.newInstance(podcastLevel);
+
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+            if (oldFragment != null)
+                transaction.remove(oldFragment);
+
+            transaction
+                    .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
+                    .addToBackStack(fragmentTag)
+                    .commit();
+        }
+        else {
+            getSupportFragmentManager().popBackStackImmediate(fragmentId, 0);
+        }
+    }
+
+    private void showEpisodeList(UUID podcastCode) {
         Fragment oldFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);;
         Fragment newFragment = EpisodeListFragment.newInstance(podcastCode);
 
@@ -159,11 +219,5 @@ public class MainActivity extends AppCompatActivity
                 .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
                 .addToBackStack(null)
                 .commit();
-    }
-
-    @Override
-    public void onPlayPauseEpisode(UUID episodeCode) {
-        Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), episodeCode);
-        startService(intent);
     }
 }

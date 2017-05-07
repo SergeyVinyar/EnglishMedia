@@ -46,6 +46,7 @@ public final class Podcast {
             ")";
 
     private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
+    private static final String SQL_SELECT_ALL_BY_PODCAST_LEVEL = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, LEVEL);
     private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
 
     private UUID code;
@@ -97,6 +98,13 @@ public final class Podcast {
      */
     public static Cursor readAll(DbHelper dbHelper) {
         return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
+    }
+
+    /**
+     * Returns items with appropriate podcastLevel
+     */
+    public static Cursor readAllByPodcastLevel(DbHelper dbHelper, PodcastLevel podcastLevel) {
+        return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL_BY_PODCAST_LEVEL, new String[] { podcastLevel.name() });
     }
 
     public UUID write(DbHelper dbHelper) {
