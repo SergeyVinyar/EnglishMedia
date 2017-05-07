@@ -74,10 +74,25 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         String podcastLevelName = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE).getString(PODCASTLEVEL_PREFERENCE, PODCASTLEVEL_PREFERENCE_ALL_VALUE);
-        if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName))
+        if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName)) {
             showPodcastList(null);
-        else
-            showPodcastList(Podcast.PodcastLevel.valueOf(podcastLevelName));
+            navigationView.setCheckedItem(R.id.menuitem_drawer_all);
+        }
+        else {
+            Podcast.PodcastLevel podcastLevel = Podcast.PodcastLevel.valueOf(podcastLevelName);
+            showPodcastList(podcastLevel);
+            switch (podcastLevel) {
+                case BEGINNER:
+                    navigationView.setCheckedItem(R.id.menuitem_drawer_beginner);
+                    break;
+                case INTERMEDIATE:
+                    navigationView.setCheckedItem(R.id.menuitem_drawer_intermediate);
+                    break;
+                case ADVANCED:
+                    navigationView.setCheckedItem(R.id.menuitem_drawer_advanced);
+                    break;
+            }
+        }
     }
 
     @Override
