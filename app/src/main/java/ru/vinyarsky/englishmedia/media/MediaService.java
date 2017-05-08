@@ -270,7 +270,7 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         if (playWhenReady) {
             registerReceiver(this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
             Notification notification = new Notification.Builder(this)
-                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setSmallIcon(R.mipmap.ic_notification)
                     .setContentTitle("EnglishMedia playback") // TODO Add to resource
                     .build();
             startForeground(123, notification);
