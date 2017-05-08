@@ -84,8 +84,10 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         public void onReceive(Context context, Intent intent) {
             // Disconnecting headphones - stop playback
             if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-                if (player != null && player.getPlayWhenReady())
+                if (player != null && player.getPlayWhenReady()) {
                     player.setPlayWhenReady(false);
+                    abandonAudioFocus();
+                }
             }
         }
     };
