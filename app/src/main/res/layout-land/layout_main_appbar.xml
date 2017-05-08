@@ -22,6 +22,13 @@
 
     </android.support.design.widget.AppBarLayout>
 
+    <ProgressBar
+        android:id="@+id/progressbar_layout_main_appbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/framelayout_layout_main_appbar_fragment"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"

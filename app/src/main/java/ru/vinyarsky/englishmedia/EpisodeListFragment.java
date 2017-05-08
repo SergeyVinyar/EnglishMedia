@@ -152,35 +152,39 @@ public class EpisodeListFragment extends Fragment {
             EMApplication app = (EMApplication)getActivity().getApplication();
             UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
 
-            // Podcast.read
-            Observable<Podcast> podcastObservable = Observable.just(podcastCode)
-                    .subscribeOn(Schedulers.io())
-                    .map((code) -> Podcast.read(app.getDbHelper(), code))
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .cache();
+            mListener.showProgress();
+            try {
+                // Podcast.read
+                Observable<Podcast> podcastObservable = Observable.just(podcastCode)
+                        .subscribeOn(Schedulers.io())
+                        .map((code) -> Podcast.read(app.getDbHelper(), code));
 
-            // Episode.readNewByPodcastCode
-            Observable<Cursor> newEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                    .subscribeOn(Schedulers.io())
-                    .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode))
-                    .observeOn(AndroidSchedulers.mainThread());
+                // Episode.readNewByPodcastCode
+                Observable<Cursor> newEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                        .subscribeOn(Schedulers.io())
+                        .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode));
 
-            // Podcast.read + Episode.readNewByPodcastCode
-            Observable
-                    .zip(podcastObservable, newEpisodesObservable, EpisodeListFragment.RecyclerViewAdapter::new)
-                    .subscribe(adapter -> views[NEW_EPISODES_PAGE].setAdapter(adapter));
+                // Episode.readAllByPodcastCode
+                Observable<Cursor> allEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
+                        .subscribeOn(Schedulers.io())
+                        .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode));
 
+                Observable
+                        .zip(podcastObservable, newEpisodesObservable, allEpisodesObservable, (podcast, newEpisodesCursor, allEpisodesCursor) -> new RecyclerViewAdapter[] {
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, newEpisodesCursor),
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, allEpisodesCursor)
+                        })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(adapters -> {
+                            views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
+                            views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
+                            mListener.hideProgress();
+                        });
 
-            // Episode.readAllByPodcastCode
-            Observable<Cursor> allEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                    .subscribeOn(Schedulers.io())
-                    .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
-                    .observeOn(AndroidSchedulers.mainThread());
-
-            // Podcast.read + Episode.readAllByPodcastCode
-            Observable
-                    .zip(podcastObservable, allEpisodesObservable, EpisodeListFragment.RecyclerViewAdapter::new)
-                    .subscribe(adapter -> views[ALL_EPISODES_PAGE].setAdapter(adapter));
+            } catch (Throwable e) {
+                mListener.hideProgress();
+                throw e;
+            }
         }
 
         /**
@@ -488,5 +492,8 @@ public class EpisodeListFragment extends Fragment {
 
     public interface OnEpisodeListFragmentListener {
         void onPlayPauseEpisode(UUID episodeCode);
+
+        void showProgress();
+        void hideProgress();
     }
 }

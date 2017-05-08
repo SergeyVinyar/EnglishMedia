@@ -70,23 +70,30 @@ public class PodcastListFragment extends Fragment {
 
         EMApplication app = (EMApplication) getActivity().getApplication();
 
-        Observable.<Cursor>create((e) -> {
-            Cursor cursor = null;
+        mListener.showProgress();
+        try {
+            Observable.<Cursor>create((e) -> {
+                Cursor cursor = null;
 
-            String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
-            if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
-                cursor = Podcast.readAll(app.getDbHelper());
-            else
-                cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
+                String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
+                if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
+                    cursor = Podcast.readAll(app.getDbHelper());
+                else
+                    cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
 
-            e.onNext(cursor);
-            e.onComplete();
-        })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((cursor) -> {
-                    recyclerView.setAdapter(new RecyclerViewAdapter(cursor));
-                });
+                e.onNext(cursor);
+                e.onComplete();
+            })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe((cursor) -> {
+                        recyclerView.setAdapter(new RecyclerViewAdapter(cursor));
+                        mListener.hideProgress();
+                    });
+        } catch (Throwable e) {
+            mListener.hideProgress();
+            throw e;
+        }
 
         return view;
     }
@@ -264,5 +271,8 @@ public class PodcastListFragment extends Fragment {
 
     public interface OnPodcastListFragmentListener {
         void onSelectPodcast(UUID podcastCode);
+
+        void showProgress();
+        void hideProgress();
     }
 }

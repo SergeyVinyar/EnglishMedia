@@ -18,6 +18,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import ru.vinyarsky.englishmedia.EMPlaybackControlView;
 
@@ -179,6 +181,14 @@ public class MainActivity extends AppCompatActivity
     public void onPlayPauseEpisode(UUID episodeCode) {
         Intent intent = MediaService.newPlayPauseToggleIntent(getApplicationContext(), episodeCode);
         startService(intent);
+    }
+
+    public void showProgress() {
+        ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.VISIBLE);
+    }
+
+    public void hideProgress() {
+        ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.GONE);
     }
 
     /**
