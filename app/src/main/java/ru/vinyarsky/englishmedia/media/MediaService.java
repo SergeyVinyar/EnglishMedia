@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
@@ -186,7 +185,6 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         return START_NOT_STICKY;
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return new MediaServiceBinder();

@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -167,7 +168,12 @@ public class EpisodeListFragment extends Fragment {
                     emitter.onNext(oldCursors);
 
                     // ...then fetch new episodes
-                    app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
+                    try {
+                        app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
+                    } catch (ExecutionException e) {
+                        emitter.onError(e.getCause());
+                        return;
+                    }
 
                     // ...and show refreshed data
                     Cursor[] newCursors = new Cursor[2];
@@ -208,21 +214,20 @@ public class EpisodeListFragment extends Fragment {
          */
         void notifyEpisodesChanged() {
             EMApplication app = (EMApplication)getActivity().getApplication();
-            UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
 
-            // Episode.readNewByPodcastCode
-            Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                    .subscribeOn(Schedulers.io())
-                    .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode))
+            Observable.just(UUID.fromString(getArguments().getString(PODCAST_CODE_ARG)))
+                    .observeOn(Schedulers.io())
+                    .map((podcastCode) -> {
+                        Cursor[] cursors = new Cursor[2];
+                        cursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
+                        cursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                        return cursors;
+                    })
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe((cursor) -> ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursor));
-
-            // Episode.readAllByPodcastCode
-            Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                    .subscribeOn(Schedulers.io())
-                    .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode))
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe((cursor) -> ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursor));
+                    .subscribe((cursors) -> {
+                        ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[0]);
+                        ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[1]);
+                    });
         }
 
         @Override
