@@ -60,7 +60,7 @@ As a matter of fact, the newest format of Zdenek's English Podcast podcast was i
         <country>UK</country>
         <level>ADVANCED</level>
         <title>Intelligence Squared</title>
-        <description>Intelligence Squared is the world&#8217;s leading forum for debate and intelligent discussion. Live and online we take you to the heart of the issues that matter, in the company of some of the world&#8217;s sharpest minds and most exciting orators. 
+        <description>Intelligence Squared is the world&#8217;s leading forum for debate and intelligent discussion. Live and online we take you to the heart of the issues that matter, in the company of some of the world&#8217;s sharpest minds and most exciting orators.
 Join the debate at www.intelligencesquared.com and download our weekly podcast every Friday.</description>
         <rss_url>http://rss.acast.com/intelligencesquared</rss_url>
         <image_src>pod_avatars_000061812247_5f6gf8_original_irqe0gbx.png</image_src>
@@ -129,7 +129,7 @@ http://teacherluke.co.uk
         <country>US</country>
         <level>BEGINNER</level>
         <title>Effortless English Podcast | Learn English with AJ Hoge</title>
-        <description>The Effortless English Show with AJ Hoge teaches you to speak English powerfully.  AJ is the author of "Effortless English: Learn To Speak English Like A Native" and is known as "The World's #1 English Teacher".  
+        <description>The Effortless English Show with AJ Hoge teaches you to speak English powerfully.  AJ is the author of "Effortless English: Learn To Speak English Like A Native" and is known as "The World's #1 English Teacher".
 Learn English. Learn English vocabulary. Learn about American culture. </description>
         <rss_url>http://effortlessenglish.libsyn.com/rss</rss_url>
         <image_src>pod_podcast_big.jpg</image_src>
@@ -268,14 +268,5 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
         <description>American Mosaic is our weekly program about music, pop culture and life in the United States.</description>
         <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=986</rss_url>
         <image_src>pod_0c6063f2_f3e7_4925_97b6_1345c4e3c833.jpg</image_src>
-    </podcast>
-    <podcast>
-        <code>77abe303-2a1b-4a67-84ab-630ba3364f7a</code>
-        <country>US</country>
-        <level>BEGINNER</level>
-        <title>In the News - Voice of America</title>
-        <description>In the News explains the main news stories of the day to help make sense of our world.</description>
-        <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=1577</rss_url>
-        <image_src>pod_ebc3b497_2e32_4f9e_ac0a_2ceab7ceace2.jpg</image_src>
     </podcast>
 </podcasts>

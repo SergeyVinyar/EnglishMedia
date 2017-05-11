@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
@@ -156,31 +157,46 @@ public class EpisodeListFragment extends Fragment {
             try {
                 // Podcast.read
                 Observable<Podcast> podcastObservable = Observable.just(podcastCode)
-                        .subscribeOn(Schedulers.io())
                         .map((code) -> Podcast.read(app.getDbHelper(), code));
 
-                // Episode.readNewByPodcastCode
-                Observable<Cursor> newEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                        .subscribeOn(Schedulers.io())
-                        .map((numOfFetchedEpisodes) -> Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode));
+                Observable<Cursor[]> episodesObservable = Observable.create(emitter -> {
+                    // First of all show to the user episodes from Db...
+                    Cursor[] oldCursors = new Cursor[2];
+                    oldCursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
+                    oldCursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                    emitter.onNext(oldCursors);
 
-                // Episode.readAllByPodcastCode
-                Observable<Cursor> allEpisodesObservable = Observable.fromFuture(app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)))
-                        .subscribeOn(Schedulers.io())
-                        .map((numOfFetchedEpisodes) -> Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode));
+                    // ...then fetch new episodes
+                    app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
+
+                    // ...and show refreshed data
+                    Cursor[] newCursors = new Cursor[2];
+                    newCursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
+                    newCursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                    emitter.onNext(newCursors);
+
+                    emitter.onComplete();
+                });
 
                 Observable
-                        .zip(podcastObservable, newEpisodesObservable, allEpisodesObservable, (podcast, newEpisodesCursor, allEpisodesCursor) -> new RecyclerViewAdapter[] {
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, newEpisodesCursor),
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, allEpisodesCursor)
+                        .combineLatest(podcastObservable, episodesObservable, (podcast, cursors) -> new RecyclerViewAdapter[] {
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[0]),
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[1])
                         })
+                        .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(adapters -> {
-                            views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
-                            views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
-                            mListener.hideProgress();
-                        });
-
+                        .subscribe(
+                                adapters -> {
+                                    views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
+                                    views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
+                                },
+                                error -> {
+                                    mListener.hideProgress();
+                                    Snackbar.make(views[NEW_EPISODES_PAGE], "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+                                },
+                                () -> {
+                                    mListener.hideProgress();
+                                });
             } catch (Throwable e) {
                 mListener.hideProgress();
                 throw e;

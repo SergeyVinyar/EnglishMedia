@@ -5,8 +5,8 @@
     <color name="colorAccent">#ef8f5b</color>
     <color name="windowBackground">#f4f4f4</color>
 
-    <color name="colorPrimaryTranslucent">#885d90d1</color>
-    <color name="colorAccentTranslucent">#88ef8f5b</color>
+    <color name="timeBar">#66000000</color>
+    <color name="timeBarBuffered">#88ef8f5b</color>
 
     <color name="beginner">#7aad3f</color>
     <color name="intermediate">#b6751f</color>
