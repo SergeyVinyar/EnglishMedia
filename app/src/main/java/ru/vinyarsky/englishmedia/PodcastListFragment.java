@@ -205,6 +205,7 @@ public class PodcastListFragment extends Fragment {
 
             holder.titleView.setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
             holder.descriptionView.setText(Html.fromHtml(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION))));
+            holder.descriptionView.setLinkTextColor(holder.descriptionView.getCurrentTextColor());
 
             if (expandedPositions.contains(cursor.getPosition())) {
                 holder.descriptionView.setMaxLines(50);

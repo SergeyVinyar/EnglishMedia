@@ -416,10 +416,13 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.durationView.setText("Remained " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000)); // TODO Move to resource
                 }
 
-                if (episode.getDescription() != null)
+                if (episode.getDescription() != null) {
                     episodeViewHolder.descriptionView.setText(Html.fromHtml(episode.getDescription()));
-                else
+                    episodeViewHolder.descriptionView.setLinkTextColor(episodeViewHolder.descriptionView.getCurrentTextColor());
+                }
+                else {
                     episodeViewHolder.descriptionView.setText("");
+                }
 
                 if (expandedPositions.contains(episodesCursor.getPosition())) {
                     episodeViewHolder.descriptionView.setMaxLines(50);
