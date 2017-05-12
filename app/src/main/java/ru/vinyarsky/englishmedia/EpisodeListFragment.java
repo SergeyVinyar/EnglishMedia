@@ -10,8 +10,8 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
@@ -51,6 +52,8 @@ public class EpisodeListFragment extends Fragment {
     private static final String STATE_VIEWPAGER_CURRENT_ITEM = "viewpager_current_item";
 
     private OnEpisodeListFragmentListener mListener;
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private ViewPager viewPager;
     private TabLayout tabLayout;
@@ -92,7 +95,7 @@ public class EpisodeListFragment extends Fragment {
         tabLayout = new TabLayout(getContext());
         tabLayout.setTabTextColors(Color.WHITE, Color.WHITE);
         tabLayout.setupWithViewPager(viewPager);
-        ((AppBarLayout) getActivity().findViewById(R.id.appbarlayout_layout_main_appbar)).addView(tabLayout);
+        mListener.addTabLayout(tabLayout);
 
         return viewPager;
     }
@@ -100,7 +103,7 @@ public class EpisodeListFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        ((AppBarLayout) getActivity().findViewById(R.id.appbarlayout_layout_main_appbar)).removeView(tabLayout);
+        mListener.removeTabLayout(tabLayout);
     }
 
     @Override
@@ -120,6 +123,12 @@ public class EpisodeListFragment extends Fragment {
         super.onDetach();
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(episodeStatusChangedReceiver);
         mListener = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.dispose();
     }
 
     @Override
@@ -170,7 +179,14 @@ public class EpisodeListFragment extends Fragment {
                     // ...then fetch new episodes
                     try {
                         app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
-                    } catch (ExecutionException e) {
+                    }
+                    catch (InterruptedException e) { // https://github.com/ReactiveX/RxJava/issues/4863
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(e);
+                            return;
+                        }
+                    }
+                    catch (ExecutionException e) {
                         emitter.onError(e.getCause());
                         return;
                     }
@@ -184,8 +200,8 @@ public class EpisodeListFragment extends Fragment {
                     emitter.onComplete();
                 });
 
-                Observable
-                        .combineLatest(podcastObservable, episodesObservable, (podcast, cursors) -> new RecyclerViewAdapter[] {
+                compositeDisposable.add(
+                        Observable.combineLatest(podcastObservable, episodesObservable, (podcast, cursors) -> new RecyclerViewAdapter[] {
                                 new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[0]),
                                 new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[1])
                         })
@@ -202,7 +218,7 @@ public class EpisodeListFragment extends Fragment {
                                 },
                                 () -> {
                                     mListener.hideProgress();
-                                });
+                                }));
             } catch (Throwable e) {
                 mListener.hideProgress();
                 throw e;
@@ -215,19 +231,20 @@ public class EpisodeListFragment extends Fragment {
         void notifyEpisodesChanged() {
             EMApplication app = (EMApplication)getActivity().getApplication();
 
-            Observable.just(UUID.fromString(getArguments().getString(PODCAST_CODE_ARG)))
-                    .observeOn(Schedulers.io())
-                    .map((podcastCode) -> {
-                        Cursor[] cursors = new Cursor[2];
-                        cursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
-                        cursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
-                        return cursors;
-                    })
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe((cursors) -> {
-                        ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[0]);
-                        ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[1]);
-                    });
+            compositeDisposable.add(
+                    Observable.just(UUID.fromString(getArguments().getString(PODCAST_CODE_ARG)))
+                            .observeOn(Schedulers.io())
+                            .map((podcastCode) -> {
+                                Cursor[] cursors = new Cursor[2];
+                                cursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
+                                cursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                                return cursors;
+                            })
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe((cursors) -> {
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[0]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[1]);
+                            }));
         }
 
         @Override
@@ -513,6 +530,9 @@ public class EpisodeListFragment extends Fragment {
 
     public interface OnEpisodeListFragmentListener {
         void onPlayPauseEpisode(UUID episodeCode);
+
+        void addTabLayout(TabLayout view);
+        void removeTabLayout(TabLayout view);
 
         void showProgress();
         void hideProgress();

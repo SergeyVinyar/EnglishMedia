@@ -4,10 +4,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -20,8 +22,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-
-import ru.vinyarsky.englishmedia.EMPlaybackControlView;
 
 import java.util.UUID;
 
@@ -74,8 +74,17 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
+    }
 
+    @Override
+    public void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+
+        // if we create an initial fragment inside onCreate we wrongly get default toolbar title instead of our's
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         String podcastLevelName = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE).getString(PODCASTLEVEL_PREFERENCE, PODCASTLEVEL_PREFERENCE_ALL_VALUE);
+
         if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName)) {
             showPodcastList(null);
             navigationView.setCheckedItem(R.id.menuitem_drawer_all);
@@ -183,10 +192,31 @@ public class MainActivity extends AppCompatActivity
         startService(intent);
     }
 
+    @Override
+    public void addTabLayout(TabLayout view) {
+        ((AppBarLayout) findViewById(R.id.appbarlayout_layout_main_appbar)).addView(view);
+    }
+
+    @Override
+    public void removeTabLayout(TabLayout view) {
+        ((AppBarLayout) findViewById(R.id.appbarlayout_layout_main_appbar)).removeView(view);
+    }
+
+    @Override
+    public void setTitle(String title) {
+        ((Toolbar) findViewById(R.id.toolbar_layout_main_appbar)).setTitle(getResources().getString(R.string.all_app_name) + " - " + title);
+    }
+
+    private void setDefaultTitle() {
+        ((Toolbar) findViewById(R.id.toolbar_layout_main_appbar)).setTitle(getResources().getString(R.string.all_app_name));
+    }
+
+    @Override
     public void showProgress() {
         ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.VISIBLE);
     }
 
+    @Override
     public void hideProgress() {
         ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.GONE);
     }
@@ -207,6 +237,8 @@ public class MainActivity extends AppCompatActivity
      * @param podcastLevel Show all podcasts if null
      */
     private void showPodcastList(Podcast.PodcastLevel podcastLevel) {
+        setDefaultTitle();
+
         String fragmentTag = PodcastListFragment.class.getName();
         if (podcastLevel != null)
             fragmentTag += "_" + podcastLevel.name();
@@ -221,10 +253,12 @@ public class MainActivity extends AppCompatActivity
             if (oldFragment != null)
                 transaction.remove(oldFragment);
 
-            transaction
-                    .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
-                    .addToBackStack(fragmentTag)
-                    .commit();
+            transaction.add(R.id.framelayout_layout_main_appbar_fragment, newFragment);
+
+            if (oldFragment != null)
+                transaction.addToBackStack(fragmentTag);
+
+            transaction.commit();
         }
         else {
             getSupportFragmentManager().popBackStackImmediate(fragmentId, 0);
@@ -232,6 +266,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void showEpisodeList(UUID podcastCode) {
+        setDefaultTitle();
+
         Fragment oldFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);;
         Fragment newFragment = EpisodeListFragment.newInstance(podcastCode);
 
@@ -240,9 +276,11 @@ public class MainActivity extends AppCompatActivity
         if (oldFragment != null)
             transaction.remove(oldFragment);
 
-        transaction
-                .add(R.id.framelayout_layout_main_appbar_fragment, newFragment)
-                .addToBackStack(null)
-                .commit();
+        transaction.add(R.id.framelayout_layout_main_appbar_fragment, newFragment);
+
+        if (oldFragment != null)
+            transaction.addToBackStack(null);
+
+        transaction.commit();
     }
 }

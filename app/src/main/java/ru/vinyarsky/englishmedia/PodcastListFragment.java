@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.ArraySet;
@@ -26,6 +27,7 @@ import java.util.UUID;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
@@ -36,6 +38,8 @@ public class PodcastListFragment extends Fragment {
     private static final String PODCAST_LEVEL_ARG_ALL_VALUE = "all";
 
     private OnPodcastListFragmentListener mListener;
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public PodcastListFragment() {
     }
@@ -72,30 +76,39 @@ public class PodcastListFragment extends Fragment {
 
         mListener.showProgress();
         try {
-            Observable.<Cursor>create((e) -> {
-                Cursor cursor = null;
+            compositeDisposable.add(
+                    Observable.<Cursor>create((emitter) -> {
+                        Cursor cursor = null;
 
-                String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
-                if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
-                    cursor = Podcast.readAll(app.getDbHelper());
-                else
-                    cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
+                        String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
+                        if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
+                            cursor = Podcast.readAll(app.getDbHelper());
+                        else
+                            cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
 
-                e.onNext(cursor);
-                e.onComplete();
-            })
+                        emitter.onNext(cursor);
+                        emitter.onComplete();
+                    })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe((cursor) -> {
                         recyclerView.setAdapter(new RecyclerViewAdapter(cursor));
                         mListener.hideProgress();
-                    });
+                    }));
         } catch (Throwable e) {
             mListener.hideProgress();
             throw e;
         }
 
         return view;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
+        if (podcastLevelName != null && !PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
+            mListener.setTitle(podcastLevelName.toLowerCase());
     }
 
     @Override
@@ -113,6 +126,12 @@ public class PodcastListFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.dispose();
     }
 
     public class RecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
@@ -271,6 +290,7 @@ public class PodcastListFragment extends Fragment {
 
     public interface OnPodcastListFragmentListener {
         void onSelectPodcast(UUID podcastCode);
+        void setTitle(String title);
 
         void showProgress();
         void hideProgress();
