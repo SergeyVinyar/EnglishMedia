@@ -17,6 +17,7 @@ import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Space;
@@ -213,6 +214,19 @@ public class PodcastListFragment extends Fragment {
                 holder.descriptionView.setMaxLines(1);
                 holder.moreView.setVisibility(View.VISIBLE);
             }
+
+            // Hiding "more..." if a description fits to one line
+            holder.descriptionView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    boolean notExpanded = !expandedPositions.contains(cursor.getPosition());
+                    boolean noEllipsis = holder.descriptionView.getLayout().getEllipsisCount(0) == 0;
+                    if (notExpanded && noEllipsis)
+                        holder.moreView.setVisibility(View.GONE);
+                    holder.descriptionView.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            });
 
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));

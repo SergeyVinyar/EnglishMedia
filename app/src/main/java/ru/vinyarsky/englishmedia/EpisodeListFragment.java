@@ -26,6 +26,7 @@ import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.Space;
 import android.widget.TextView;
@@ -428,6 +429,19 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.descriptionView.setMaxLines(1);
                     episodeViewHolder.moreView.setVisibility(View.VISIBLE);
                 }
+
+                // Hiding "more..." if a description fits to one line
+                episodeViewHolder.descriptionView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                    @Override
+                    public boolean onPreDraw() {
+                        boolean notExpanded = !expandedPositions.contains(episodesCursor.getPosition());
+                        boolean noEllipsis = episodeViewHolder.descriptionView.getLayout().getEllipsisCount(0) == 0;
+                        if (notExpanded && noEllipsis)
+                            episodeViewHolder.moreView.setVisibility(View.GONE);
+                        episodeViewHolder.descriptionView.getViewTreeObserver().removeOnPreDrawListener(this);
+                        return true;
+                    }
+                });
 
                 // Add empty space at the bottom to the last item otherwise this item hides behind
                 // player control view
