@@ -12,12 +12,12 @@
     android:paddingTop="@dimen/all_activity_vertical_margin"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="@dimen/layout_main_navheader_vertical_spacing"
-        android:text="English Media for ESL learners"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textStyle="bold" />
+    <!--<TextView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:paddingTop="@dimen/layout_main_navheader_vertical_spacing"-->
+        <!--android:text="English Media for ESL learners"-->
+        <!--android:textAppearance="@style/TextAppearance.AppCompat.Body1"-->
+        <!--android:textStyle="bold" />-->
 
 </LinearLayout>

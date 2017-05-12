@@ -55,12 +55,16 @@
 
         <ImageView
             android:id="@+id/imageView_item_episode_status"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:scaleType="fitXY"
             app:layout_constraintLeft_toLeftOf="@+id/guideline_item_episode_left"
             app:layout_constraintTop_toTopOf="@+id/textview_item_episode_title"
-            app:srcCompat="@drawable/episode_status_listening" />
+            app:srcCompat="@drawable/episode_status_listening"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/textview_item_episode_title"
+            android:layout_marginBottom="0dp" />
 
         <TextView
             android:id="@+id/textview_item_episode_title"
