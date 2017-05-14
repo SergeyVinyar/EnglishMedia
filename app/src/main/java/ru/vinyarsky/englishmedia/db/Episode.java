@@ -118,7 +118,7 @@ public final class Episode {
         return this.write(dbHelper.getDatabase());
     }
 
-    UUID write(SQLiteDatabase db) {
+    /* package */ UUID write(SQLiteDatabase db) {
         if (this.getCode() == null)
             this.code = UUID.randomUUID();
 

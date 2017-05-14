@@ -85,7 +85,15 @@ public final class Podcast {
      * @return null if not found
      */
     public static Podcast read(DbHelper dbHelper, UUID code) {
-        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_BY_CODE, new String[] { code.toString() })) {
+        return read(dbHelper.getDatabase(), code);
+    }
+
+    /**
+     * Returns Podcast item by Code
+     * @return null if not found
+     */
+    /* package */ static Podcast read(SQLiteDatabase db, UUID code) {
+        try (Cursor cursor = db.rawQuery(SQL_SELECT_BY_CODE, new String[] { code.toString() })) {
             cursor.moveToNext();
             if (cursor.getCount() > 0)
                 return new Podcast(cursor);
@@ -111,7 +119,7 @@ public final class Podcast {
         return this.write(dbHelper.getDatabase());
     }
 
-    UUID write(SQLiteDatabase db) {
+    /* package */ UUID write(SQLiteDatabase db) {
         if (this.getCode() == null)
             this.code = UUID.randomUUID();
 
