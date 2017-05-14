@@ -32,7 +32,7 @@
             android:id="@+id/textview_item_episode_more"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="more..."
+            android:text="@string/all_more"
             android:textColor="@android:color/black"
             android:textStyle="bold"
             android:layout_marginLeft="0dp"

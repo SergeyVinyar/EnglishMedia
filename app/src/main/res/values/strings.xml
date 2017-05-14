@@ -1,8 +1,18 @@
 <resources>
     <string name="all_app_name">English Media</string>
+    <string name="all_no_network">No network</string>
+    <string name="all_more">more…</string>
+    <string name="all_subscribed">Subscribed</string>
 
     <string name="main_navigation_drawer_open">Open navigation drawer</string>
     <string name="main_navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="main_action_settings">Settings</string>
+    <string name="media_service_notification_title">EnglishMedia playback</string>
+
+    <string name="main_activity_content_not_found">Cannot find an audio file on the Internet</string>
+
+    <string name="fragment_episodelist_page_title_new">New</string>
+    <string name="fragment_episodelist_page_title_all">All</string>
+    <string name="fragment_episodelist_remained">Remained</string>
+
 </resources>

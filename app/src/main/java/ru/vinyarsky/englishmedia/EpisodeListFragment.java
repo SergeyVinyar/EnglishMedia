@@ -223,7 +223,7 @@ public class EpisodeListFragment extends Fragment {
                                 views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
                             }
                             else if (notification.isOnError()) {
-                                Snackbar.make(views[NEW_EPISODES_PAGE], "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+                                Snackbar.make(views[NEW_EPISODES_PAGE], R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
                                 mListener.hideProgress();
                             }
                             else if (notification.isOnComplete()) {
@@ -280,12 +280,12 @@ public class EpisodeListFragment extends Fragment {
         }
 
         @Override
-        public CharSequence getPageTitle(int position) { // TODO Add resources
+        public CharSequence getPageTitle(int position) {
             switch (position) {
                 case NEW_EPISODES_PAGE:
-                    return "New";
+                    return getResources().getString(R.string.fragment_episodelist_page_title_new);
                 case ALL_EPISODES_PAGE:
-                    return "All";
+                    return getResources().getString(R.string.fragment_episodelist_page_title_all);
                 default:
                     return super.getPageTitle(position);
             }
@@ -423,7 +423,7 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.durationView.setText(timeFormat.format(((long) episode.getDuration()) * 1000));
                 }
                 else {
-                    episodeViewHolder.durationView.setText("Remained " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000)); // TODO Move to resource
+                    episodeViewHolder.durationView.setText(getResources().getString(R.string.fragment_episodelist_remained) + " " + timeFormat.format(((long) episode.getDuration() - episode.getCurrentPosition()) * 1000));
                 }
 
                 if (episode.getDescription() != null) {

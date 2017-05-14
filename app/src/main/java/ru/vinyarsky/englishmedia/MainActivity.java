@@ -66,14 +66,14 @@ public class MainActivity extends AppCompatActivity
     private BroadcastReceiver noNetworkReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Snackbar.make(findViewById(R.id.activity_main), "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+            Snackbar.make(findViewById(R.id.activity_main), R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
         }
     };
 
     private BroadcastReceiver contentNotFoundReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Snackbar.make(findViewById(R.id.activity_main), "Can't find an audio file on the Internet", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+            Snackbar.make(findViewById(R.id.activity_main), R.string.main_activity_content_not_found, Snackbar.LENGTH_SHORT).show();
         }
     };
 
