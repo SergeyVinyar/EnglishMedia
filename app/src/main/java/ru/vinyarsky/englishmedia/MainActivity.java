@@ -1,18 +1,22 @@
 package ru.vinyarsky.englishmedia;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -59,6 +63,20 @@ public class MainActivity extends AppCompatActivity
     };
     private MediaService.MediaServiceBinder mediaServiceBinder;
 
+    private BroadcastReceiver noNetworkReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Snackbar.make(findViewById(R.id.activity_main), "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+        }
+    };
+
+    private BroadcastReceiver contentNotFoundReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Snackbar.make(findViewById(R.id.activity_main), "Can't find an audio file on the Internet", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +92,10 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
+
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
+        broadcastManager.registerReceiver(noNetworkReceiver, new IntentFilter(MediaService.NO_NETWORK_BROADCAST_ACTION));
+        broadcastManager.registerReceiver(contentNotFoundReceiver, new IntentFilter(MediaService.CONTENT_NOT_FOUND_BROADCAST_ACTION));
     }
 
     @Override
@@ -116,6 +138,14 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         super.onStop();
         unbindService(this.mediaServiceConnection);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
+        broadcastManager.unregisterReceiver(noNetworkReceiver);
+        broadcastManager.unregisterReceiver(contentNotFoundReceiver);
     }
 
     @Override

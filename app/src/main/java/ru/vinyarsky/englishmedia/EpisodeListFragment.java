@@ -54,7 +54,7 @@ public class EpisodeListFragment extends Fragment {
 
     private OnEpisodeListFragmentListener mListener;
 
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private CompositeDisposable compositeDisposable;
 
     private ViewPager viewPager;
     private TabLayout tabLayout;
@@ -82,6 +82,7 @@ public class EpisodeListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
@@ -89,9 +90,6 @@ public class EpisodeListFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         viewPager = (ViewPager) inflater.inflate(R.layout.fragment_episodelist, container, false);
-        viewPager.setAdapter(new CustomPagerAdapter());
-        if (savedInstanceState != null)
-            viewPager.setCurrentItem(savedInstanceState.getInt(STATE_VIEWPAGER_CURRENT_ITEM, 0));
 
         tabLayout = new TabLayout(getContext());
         tabLayout.setTabTextColors(Color.WHITE, Color.WHITE);
@@ -99,6 +97,15 @@ public class EpisodeListFragment extends Fragment {
         mListener.addTabLayout(tabLayout);
 
         return viewPager;
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        ViewPager viewPager = (ViewPager) view;
+        viewPager.setAdapter(new CustomPagerAdapter());
+        if (savedInstanceState != null)
+            viewPager.setCurrentItem(savedInstanceState.getInt(STATE_VIEWPAGER_CURRENT_ITEM, 0));
     }
 
     @Override
@@ -206,20 +213,23 @@ public class EpisodeListFragment extends Fragment {
                                 new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[0]),
                                 new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[1])
                         })
+                        .materialize() // We want to get all the emitted data before onError
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                adapters -> {
-                                    views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
-                                    views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
-                                },
-                                error -> {
-                                    mListener.hideProgress();
-                                    Snackbar.make(views[NEW_EPISODES_PAGE], "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
-                                },
-                                () -> {
-                                    mListener.hideProgress();
-                                }));
+                        .subscribe(notification -> {
+                            if (notification.isOnNext()) {
+                                RecyclerViewAdapter[] adapters = notification.getValue();
+                                views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
+                                views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
+                            }
+                            else if (notification.isOnError()) {
+                                Snackbar.make(views[NEW_EPISODES_PAGE], "No network", Snackbar.LENGTH_SHORT).show(); // TODO Resources
+                                mListener.hideProgress();
+                            }
+                            else if (notification.isOnComplete()) {
+                                mListener.hideProgress();
+                            }
+                        }));
             } catch (Throwable e) {
                 mListener.hideProgress();
                 throw e;

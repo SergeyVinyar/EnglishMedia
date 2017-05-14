@@ -29,6 +29,7 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlaybackControlView;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.upstream.cache.Cache;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
@@ -37,12 +38,17 @@ import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.UnknownHostException;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.reactivex.Observable;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.EMApplication;
 import ru.vinyarsky.englishmedia.EMPlaybackControlView;
@@ -58,8 +64,10 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     private static final String PLAY_PAUSE_TOGGLE_ACTION = "ru.vinyarsky.englishmedia.action.play_pause_toggle";
     private static final String DOWNLOAD_ACTION = "ru.vinyarsky.englishmedia.action.download";
 
-    // Intent action for broadcast receivers
+    // Intent actions for broadcast receivers
     public static final String EPISODE_STATUS_CHANGED_BROADCAST_ACTION = "ru.vinyarsky.englishmedia.action.episode_status_changed";
+    public static final String NO_NETWORK_BROADCAST_ACTION = "ru.vinyarsky.englishmedia.action.no_network";
+    public static final String CONTENT_NOT_FOUND_BROADCAST_ACTION = "ru.vinyarsky.englishmedia.action.content_not_found";
 
     // Intent extra parameter for PLAY_PAUSE_TOGGLE_ACTION, DOWNLOAD_ACTION and EPISODE_STATUS_CHANGED_BROADCAST_ACTION
     public static final String EPISODE_CODE_EXTRA = "episode_code";
@@ -68,13 +76,15 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     private ExtractorsFactory extractorsFactory;
     private DataSource.Factory dataSourceFactory;
 
+    private CompositeDisposable compositeDisposable;
+
     private LocalBroadcastManager broadcastManager;
 
     private int mountedViewCount = 0;
 
     private UUID currentEpisodeCode;
 
-    private Handler releaseDelayedHandler = new Handler();
+    private Handler mainThreadHandler = new Handler();
 
     public final MediaServiceEventManagerImpl mediaServiceEventManager = new MediaServiceEventManagerImpl();
 
@@ -107,6 +117,36 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         }
     };
 
+    private final ExtractorMediaSource.EventListener extractorEventListener = new ExtractorMediaSource.EventListener() {
+        @Override
+        public void onLoadError(IOException error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof ConnectException || cause instanceof UnknownHostException) {
+                reset();
+                broadcastEmitNoNetwork();
+            }
+            else if (cause instanceof HttpDataSource.InvalidResponseCodeException) {
+                int responseCode = ((HttpDataSource.InvalidResponseCodeException) cause).responseCode;
+                switch (responseCode) {
+                    case HttpURLConnection.HTTP_BAD_REQUEST:
+                    case HttpURLConnection.HTTP_NOT_FOUND:
+                        reset();
+                        broadcastEmitContentNotFound();
+                        break;
+                }
+            }
+        }
+
+        private void reset() {
+            if (player != null && player.getPlayWhenReady()) {
+                player.setPlayWhenReady(false);
+                abandonAudioFocus();
+            }
+            mediaServiceEventManager.onEpisodeChanged(null, null);
+            currentEpisodeCode = null;
+        }
+    };
+
     public static Intent newPlayPauseToggleIntent(Context appContext, UUID episodeCode) {
         Intent intent = new Intent(PLAY_PAUSE_TOGGLE_ACTION, null, appContext, MediaService.class);
         intent.putExtra(EPISODE_CODE_EXTRA, episodeCode);
@@ -124,18 +164,20 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
         super.onCreate();
         EMApplication app = (EMApplication) getApplication();
 
-        Cache cache = new SimpleCache(new File(this.getCacheDir().getAbsolutePath() + "/exoplayer"), new LeastRecentlyUsedCacheEvictor(1024 * 1024 * 100));
+        Cache cache = new SimpleCache(new File(this.getCacheDir().getAbsolutePath() + "/exoplayer"), new LeastRecentlyUsedCacheEvictor(1024 * 1024 * 100)); // 100 Mb max
         DataSource.Factory httpDataSourceFactory = new OkHttpDataSourceFactory(app.getHttpClient(), Util.getUserAgent(this, "EnglishMedia"), null);
         this.dataSourceFactory = new CacheDataSourceFactory(cache, httpDataSourceFactory, CacheDataSource.FLAG_BLOCK_ON_CACHE | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
 
         this.extractorsFactory = new DefaultExtractorsFactory();
 
+        this.compositeDisposable = new CompositeDisposable();
         this.broadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
     }
 
     @Override
     public void onDestroy() {
         releasePlayer();
+        this.compositeDisposable.dispose();
         super.onDestroy();
     }
 
@@ -143,38 +185,40 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     public int onStartCommand(Intent intent, int flags, int startId) {
         switch (intent.getAction()) {
             case PLAY_PAUSE_TOGGLE_ACTION:
-                Observable.just((UUID) intent.getSerializableExtra(EPISODE_CODE_EXTRA))
-                        .subscribeOn(Schedulers.io())
-                        .map((episodeCode) -> Episode.read(((EMApplication) getApplication()).getDbHelper(), episodeCode))
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe((episode) -> {
-                            initPlayer();
-                            if (episode.getCode().equals(this.currentEpisodeCode)) {
-                                boolean newPlayWhenReady = !this.player.getPlayWhenReady();
-                                if (newPlayWhenReady) {
-                                    if (requestAudioFocus())
-                                        this.player.setPlayWhenReady(true);
-                                }
-                                else {
-                                    this.player.setPlayWhenReady(false);
-                                    abandonAudioFocus();
-                                }
-                            } else {
-                                ExtractorMediaSource mediaSource = new ExtractorMediaSource(Uri.parse(episode.getContentUrl()), this.dataSourceFactory, this.extractorsFactory, null, null);
-                                this.player.seekTo(episode.getCurrentPosition() * 1000);
-                                this.player.prepare(mediaSource);
-                                this.currentEpisodeCode = episode.getCode();
-                                if (requestAudioFocus())
-                                    this.player.setPlayWhenReady(true);
-                                Observable.just(episode.getPodcastCode())
-                                        .subscribeOn(Schedulers.io())
-                                        .map((podcastCode) -> Podcast.read(((EMApplication) getApplication()).getDbHelper(), podcastCode))
-                                        .observeOn(AndroidSchedulers.mainThread())
-                                        .subscribe((podcast) -> {
-                                            mediaServiceEventManager.onEpisodeChanged(podcast.getTitle(), episode.getTitle());
-                                        });
-                            }
-                        });
+                this.compositeDisposable.add(
+                        Observable.just((UUID) intent.getSerializableExtra(EPISODE_CODE_EXTRA))
+                                .subscribeOn(Schedulers.io())
+                                .map((episodeCode) -> Episode.read(((EMApplication) getApplication()).getDbHelper(), episodeCode))
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe((episode) -> {
+                                    initPlayer();
+                                    if (episode.getCode().equals(this.currentEpisodeCode)) {
+                                        boolean newPlayWhenReady = !this.player.getPlayWhenReady();
+                                        if (newPlayWhenReady) {
+                                            if (requestAudioFocus())
+                                                this.player.setPlayWhenReady(true);
+                                        }
+                                        else {
+                                            this.player.setPlayWhenReady(false);
+                                            abandonAudioFocus();
+                                        }
+                                    } else {
+                                        ExtractorMediaSource mediaSource = new ExtractorMediaSource(Uri.parse(episode.getContentUrl()), this.dataSourceFactory, this.extractorsFactory, this.mainThreadHandler, this.extractorEventListener);
+                                        this.player.seekTo(episode.getCurrentPosition() * 1000);
+                                        this.player.prepare(mediaSource);
+                                        this.currentEpisodeCode = episode.getCode();
+                                        if (requestAudioFocus())
+                                            this.player.setPlayWhenReady(true);
+                                        this.compositeDisposable.add(
+                                                Observable.just(episode.getPodcastCode())
+                                                        .subscribeOn(Schedulers.io())
+                                                        .map((podcastCode) -> Podcast.read(((EMApplication) getApplication()).getDbHelper(), podcastCode))
+                                                        .observeOn(AndroidSchedulers.mainThread())
+                                                        .subscribe((podcast) -> {
+                                                            mediaServiceEventManager.onEpisodeChanged(podcast.getTitle(), episode.getTitle());
+                                                        }));
+                                    }
+                                }));
                 break;
             case DOWNLOAD_ACTION:
 //                if (intent.getData() != null) {
@@ -258,13 +302,13 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
 
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        this.releaseDelayedHandler.removeCallbacks(this::releasePlayer);
+        this.mainThreadHandler.removeCallbacks(this::releasePlayer);
         if ((!playWhenReady)
                 || (playbackState == ExoPlayer.STATE_IDLE)
                 || (playbackState == ExoPlayer.STATE_ENDED))
         {
             saveCurrentPosition(true);
-            this.releaseDelayedHandler.postDelayed(this::releasePlayer, 1000 * 60 * 5); // 5 mins
+            this.mainThreadHandler.postDelayed(this::releasePlayer, 1000 * 60 * 5); // 5 mins
         }
 
         if (playWhenReady) {
@@ -321,42 +365,43 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
             return;
         this.lastSaveCurrentPositionNanoTime = System.nanoTime();
 
-        Observable.just(new Object[] { this.currentEpisodeCode, this.player.getCurrentPosition() })
-                .observeOn(Schedulers.io())
-                .map((data) -> {
-                    EMApplication app = (EMApplication) getApplication();
-                    Episode episode = Episode.read(app.getDbHelper(), (UUID) data[0]);
-                    if (episode != null) {
-                        Episode.EpisodeStatus oldStatus = episode.getStatus();
+        this.compositeDisposable.add(
+                Observable.just(new Object[] { this.currentEpisodeCode, this.player.getCurrentPosition() })
+                        .observeOn(Schedulers.io())
+                        .map((data) -> {
+                            EMApplication app = (EMApplication) getApplication();
+                            Episode episode = Episode.read(app.getDbHelper(), (UUID) data[0]);
+                            if (episode != null) {
+                                Episode.EpisodeStatus oldStatus = episode.getStatus();
 
-                        episode.setCurrentPosition((int)((Long) data[1] / 1000));
-                        if (((Long)data[1]).compareTo(episode.getDuration() * 1000L) >= 0) {
-                            episode.setStatus(Episode.EpisodeStatus.COMPLETED);
-                            episode.setCurrentPosition(0); // Next time we listen from the beginning
-                        }
-                        else {
-                            // No LISTENING for already COMPLETED episodes
-                            if(Episode.EpisodeStatus.NEW.equals(episode.getStatus()))
-                                episode.setStatus(Episode.EpisodeStatus.LISTENING);
-                        }
+                                episode.setCurrentPosition((int)((Long) data[1] / 1000));
+                                if (((Long)data[1]).compareTo(episode.getDuration() * 1000L) >= 0) {
+                                    episode.setStatus(Episode.EpisodeStatus.COMPLETED);
+                                    episode.setCurrentPosition(0); // Next time we listen from the beginning
+                                }
+                                else {
+                                    // No LISTENING for already COMPLETED episodes
+                                    if(Episode.EpisodeStatus.NEW.equals(episode.getStatus()))
+                                        episode.setStatus(Episode.EpisodeStatus.LISTENING);
+                                }
 
-                        episode.write(app.getDbHelper());
+                                episode.write(app.getDbHelper());
 
-                        if (!episode.getStatus().equals(oldStatus)) {
-                            broadcastEmitEpisodeStatusChanged(episode.getCode());
-                        }
+                                if (!episode.getStatus().equals(oldStatus)) {
+                                    broadcastEmitEpisodeStatusChanged(episode.getCode());
+                                }
 
-                        return episode.getStatus();
-                    }
-                    return Episode.EpisodeStatus.COMPLETED;
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((status) -> {
-                    if (Episode.EpisodeStatus.COMPLETED.equals(status)) {
-                        this.currentEpisodeCode = null;
-                        this.mediaServiceEventManager.onEpisodeChanged(null, null);
-                    }
-                });
+                                return episode.getStatus();
+                            }
+                            return Episode.EpisodeStatus.COMPLETED;
+                        })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe((status) -> {
+                            if (Episode.EpisodeStatus.COMPLETED.equals(status)) {
+                                this.currentEpisodeCode = null;
+                                this.mediaServiceEventManager.onEpisodeChanged(null, null);
+                            }
+                        }));
     }
 
     /**
@@ -367,6 +412,16 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
     private void broadcastEmitEpisodeStatusChanged(UUID episodeCode) {
         Intent broadcast_intent = new Intent(EPISODE_STATUS_CHANGED_BROADCAST_ACTION);
         broadcast_intent.putExtra(EPISODE_CODE_EXTRA, episodeCode);
+        this.broadcastManager.sendBroadcast(broadcast_intent);
+    }
+
+    private void broadcastEmitNoNetwork() {
+        Intent broadcast_intent = new Intent(NO_NETWORK_BROADCAST_ACTION);
+        this.broadcastManager.sendBroadcast(broadcast_intent);
+    }
+
+    private void broadcastEmitContentNotFound() {
+        Intent broadcast_intent = new Intent(CONTENT_NOT_FOUND_BROADCAST_ACTION);
         this.broadcastManager.sendBroadcast(broadcast_intent);
     }
 

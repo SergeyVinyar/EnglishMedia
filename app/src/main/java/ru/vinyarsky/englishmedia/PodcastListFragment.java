@@ -40,7 +40,7 @@ public class PodcastListFragment extends Fragment {
 
     private OnPodcastListFragmentListener mListener;
 
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private CompositeDisposable compositeDisposable;
 
     public PodcastListFragment() {
     }
@@ -62,6 +62,7 @@ public class PodcastListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
@@ -73,13 +74,19 @@ public class PodcastListFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        EMApplication app = (EMApplication) getActivity().getApplication();
+        return view;
+    }
 
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         mListener.showProgress();
         try {
             compositeDisposable.add(
                     Observable.<Cursor>create((emitter) -> {
                         Cursor cursor = null;
+
+                        EMApplication app = (EMApplication) getActivity().getApplication();
 
                         String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
                         if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
@@ -93,6 +100,7 @@ public class PodcastListFragment extends Fragment {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe((cursor) -> {
+                        RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_podcastlist);
                         recyclerView.setAdapter(new RecyclerViewAdapter(cursor));
                         mListener.hideProgress();
                     }));
@@ -100,8 +108,6 @@ public class PodcastListFragment extends Fragment {
             mListener.hideProgress();
             throw e;
         }
-
-        return view;
     }
 
     @Override
