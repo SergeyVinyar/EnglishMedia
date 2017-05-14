@@ -44,18 +44,19 @@ public final class RssFetcher {
                 .subscribeOn(Schedulers.io())
                 .map((podcastCode) -> {
                     Podcast podcast = Podcast.read(this.dbHelperSupplier.get(), podcastCode);
-                    // TODO podcast == null
-                    Request request = new Request.Builder()
-                            .url(podcast.getRssUrl())
-                            .build();
-                    try (Response response = httpClientSupplier.get().newCall(request).execute()) {
-                        if (response.isSuccessful()) {
-                            XmlPullParser parser = Xml.newPullParser();
-                            parser.setInput(response.body().charStream());
-                            parser.next();
-                            int count = processRss(parser, podcastCode);
-                            parser.setInput(null); // Release internal structures
-                            return count;
+                    if (podcast != null) {
+                        Request request = new Request.Builder()
+                                .url(podcast.getRssUrl())
+                                .build();
+                        try (Response response = httpClientSupplier.get().newCall(request).execute()) {
+                            if (response.isSuccessful()) {
+                                XmlPullParser parser = Xml.newPullParser();
+                                parser.setInput(response.body().charStream());
+                                parser.next();
+                                int count = processRss(parser, podcastCode);
+                                parser.setInput(null); // Release internal structures
+                                return count;
+                            }
                         }
                     }
                     return 0;
@@ -96,7 +97,7 @@ public final class RssFetcher {
                 }
             }
         } catch (XmlPullParserException | IOException e) {
-            // TODO
+            // Nothing we can do here
         }
         return count;
     }
@@ -167,7 +168,7 @@ public final class RssFetcher {
         return episode;
     }
 
-    public synchronized void close() {
-        // TODO
+    public /* synchronized */ void close() {
+        // Do nothing
     }
 }

@@ -58,7 +58,7 @@ import ru.vinyarsky.englishmedia.db.Podcast;
 
 public class MediaService extends Service implements ExoPlayer.EventListener {
 
-    // TODO Downloading
+    // TODO Implement explicit downloading by a user
 
     // Intent actions for onStartCommand
     private static final String PLAY_PAUSE_TOGGLE_ACTION = "ru.vinyarsky.englishmedia.action.play_pause_toggle";
