@@ -375,7 +375,7 @@ public class MediaService extends Service implements ExoPlayer.EventListener {
                                 Episode.EpisodeStatus oldStatus = episode.getStatus();
 
                                 episode.setCurrentPosition((int)((Long) data[1] / 1000));
-                                if (((Long)data[1]).compareTo(episode.getDuration() * 1000L) >= 0) {
+                                if (((Long)data[1]).compareTo((episode.getDuration() - 1) * 1000L) >= 0) {
                                     episode.setStatus(Episode.EpisodeStatus.COMPLETED);
                                     episode.setCurrentPosition(0); // Next time we listen from the beginning
                                 }
