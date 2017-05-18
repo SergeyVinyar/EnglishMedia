@@ -14,6 +14,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -145,6 +146,7 @@ public class PodcastListFragment extends Fragment {
 
         private Cursor cursor;
         private Set<Integer> expandedPositions = new ArraySet<>();
+        private LruCache<String, Bitmap> imageCache = new LruCache<>(30);
 
         public RecyclerViewAdapter(Cursor cursor) {
             this.cursor = cursor;
@@ -236,7 +238,12 @@ public class PodcastListFragment extends Fragment {
             });
 
             try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH))));
+                String uriAsString = cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH));
+                Bitmap bitmap = imageCache.get(uriAsString);
+                if (bitmap == null) {
+                    bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(uriAsString));
+                    imageCache.put(uriAsString, bitmap);
+                }
                 holder.podcastImageView.setImageBitmap(bitmap);
             } catch (IOException e) {
                 // OK, no image then...
