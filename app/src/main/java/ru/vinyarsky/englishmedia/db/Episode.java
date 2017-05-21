@@ -37,15 +37,14 @@ public final class Episode {
             String.format("  %s text not null,", CONTENT_URL) +
             String.format("  %s integer not null,", DURATION) +
             String.format("  %s integer,", PUB_DATE) +
-            String.format("  %s integer not null,", STATUS) +
+            String.format("  %s text not null,", STATUS) +
             String.format("  %s integer not null", CURRENT_POSITION) +
             ")";
 
-    private static final String SQL_SELECT_ALL = String.format("select ROWID as _id, * from %s", TABLE_NAME);
-    private static final String SQL_SELECT_ALL_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ?1 order by %s desc", TABLE_NAME, PODCAST_CODE, PUB_DATE);
-    private static final String SQL_SELECT_NEW_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ?1 and %s in ('%s', '%s') order by %s desc", TABLE_NAME, PODCAST_CODE, STATUS, EpisodeStatus.NEW.toString(), EpisodeStatus.LISTENING.toString(), PUB_DATE);
-    private static final String SQL_EXISTS_BY_PODCAST_CODE_AND_GUID = String.format("select exists(select 1 from %s where %s = ?1 and %s = ?2)", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
-    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?1", TABLE_NAME, CODE);
+    private static final String SQL_SELECT_ALL_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ? order by %s desc", TABLE_NAME, PODCAST_CODE, PUB_DATE);
+    private static final String SQL_SELECT_NEW_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ? and %s in ('%s', '%s') order by %s desc", TABLE_NAME, PODCAST_CODE, STATUS, EpisodeStatus.NEW.toString(), EpisodeStatus.LISTENING.toString(), PUB_DATE);
+    private static final String SQL_EXISTS_BY_PODCAST_CODE_AND_GUID = String.format("select exists(select 1 from %s where %s = ? and %s = ?)", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
+    private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?", TABLE_NAME, CODE);
 
     private UUID code;
     private UUID podcastCode;
@@ -85,10 +84,6 @@ public final class Episode {
         this.setCurrentPosition(Integer.parseInt(cursor.getString(cursor.getColumnIndex(CURRENT_POSITION))));
     }
 
-    public static Cursor readAll(DbHelper dbHelper) {
-        return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
-    }
-
     public static Cursor readNewByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
         return dbHelper.getDatabase().rawQuery(SQL_SELECT_NEW_BY_PODCAST_CODE, new String[] { podcastCode.toString() });
     }
@@ -112,6 +107,27 @@ public final class Episode {
             cursor.moveToNext();
             return cursor.getCount() > 0 && cursor.getInt(0) == 1;
         }
+    }
+
+    public static void setStatusListeningIfRequired(DbHelper dbHelper, String contentUrl) {
+        ContentValues contentValues = new ContentValues(1);
+        contentValues.put(STATUS, EpisodeStatus.LISTENING.toString());
+        String whereClause = String.format("%s != ? and %s = ?", STATUS, CONTENT_URL);
+        dbHelper.getDatabase().update(TABLE_NAME, contentValues, whereClause, new String[] { EpisodeStatus.COMPLETED.toString(), contentUrl });
+    }
+
+    public static void setStatusCompleted(DbHelper dbHelper, String contentUrl) {
+        ContentValues contentValues = new ContentValues(1);
+        contentValues.put(STATUS, EpisodeStatus.COMPLETED.toString());
+        String whereClause = String.format("%s = ?", CONTENT_URL);
+        dbHelper.getDatabase().update(TABLE_NAME, contentValues, whereClause, new String[] { contentUrl });
+    }
+
+    public static void updatePosition(DbHelper dbHelper, String contentUrl, int position) {
+        ContentValues contentValues = new ContentValues(1);
+        contentValues.put(CURRENT_POSITION, position);
+        String whereClause = String.format("%s = ?", CONTENT_URL);
+        dbHelper.getDatabase().update(TABLE_NAME, contentValues, whereClause, new String[] { contentUrl });
     }
 
     public UUID write(DbHelper dbHelper) {
