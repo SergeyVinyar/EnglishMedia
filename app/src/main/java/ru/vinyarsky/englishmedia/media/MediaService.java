@@ -55,6 +55,11 @@ public class MediaService extends Service {
 
     private LocalBroadcastManager broadcastManager;
 
+    public MediaService() {
+        super();
+        this.player = EMApplication.getMediaComponent().getPlayer();
+    }
+
     public static Intent newPlayPauseToggleIntent(Context appContext, UUID episodeCode) {
         Intent intent = new Intent(PLAY_PAUSE_TOGGLE_ACTION, null, appContext, MediaService.class);
         intent.putExtra(EPISODE_CODE_EXTRA, episodeCode);
@@ -72,13 +77,14 @@ public class MediaService extends Service {
         super.onCreate();
         this.compositeDisposable = new CompositeDisposable();
         this.broadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
-        this.player = new Player(getApplicationContext(), ((EMApplication) getApplication()).getHttpClient(), this.playerListener);
+        this.player.addListener(this.playerListener);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         this.compositeDisposable.dispose();
+        this.player.removeListener(this.playerListener);
         this.player.release();
         this.player = null;
     }
@@ -282,7 +288,7 @@ public class MediaService extends Service {
     public class MediaServiceBinder extends Binder {
 
         public void mountPlaybackControlView(EMPlaybackControlView view) {
-            view.setPlayer(MediaService.this.player);
+            view.setPlayer(MediaService.this.player.asExoPlayer());
             view.setMediaServiceEventManager(MediaService.this.mediaServiceEventManager);
             view.setControlDispatcher(new PlaybackControlView.ControlDispatcher() {
 
@@ -294,7 +300,7 @@ public class MediaService extends Service {
 
                 @Override
                 public boolean dispatchSeekTo(ExoPlayer player, int windowIndex, long positionMs) {
-                    MediaService.this.player.seekTo(windowIndex, positionMs);
+                    MediaService.this.player.asExoPlayer().seekTo(windowIndex, positionMs);
                     return true;
                 }
             });
