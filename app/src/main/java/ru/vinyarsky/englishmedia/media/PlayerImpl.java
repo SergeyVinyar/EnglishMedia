@@ -81,13 +81,11 @@ import okhttp3.OkHttpClient;
 
         this.playerEventEmitter.onPlay();
         setPlayWhenReady(true);
-        this.emitNewPosition.run();
     }
 
     @Override
     public void stop() {
-        super.stop();
-        //setPlayWhenReady(false);
+        setPlayWhenReady(false);
         this.audioFocus.abandonAudioFocus();
         this.playerEventEmitter.onStop((int) getCurrentPosition() / 1000);
         this.emitNewPosition.run();
@@ -105,13 +103,11 @@ import okhttp3.OkHttpClient;
 
     private void pause() {
         setPlayWhenReady(false);
-        this.emitNewPosition.run();
     }
 
     private void resume() {
         if (this.playingUrl != null && audioFocus.ensureAudioFocus()) {
             setPlayWhenReady(true);
-            this.emitNewPosition.run();
         }
     }
 
@@ -164,7 +160,7 @@ import okhttp3.OkHttpClient;
 
         @Override
         public void onTimelineChanged(Timeline timeline, Object manifest) {
-            PlayerImpl.this.emitNewPosition.run();
+            // Do nothing
         }
 
         @Override
@@ -184,6 +180,9 @@ import okhttp3.OkHttpClient;
                 PlayerImpl.this.playerEventEmitter.onCompleted();
                 reset();
             }
+            else if (playWhenReady && playbackState == ExoPlayer.STATE_READY) {
+                PlayerImpl.this.emitNewPosition.run();
+            }
         }
 
         @Override
@@ -193,7 +192,7 @@ import okhttp3.OkHttpClient;
 
         @Override
         public void onPositionDiscontinuity() {
-            PlayerImpl.this.emitNewPosition.run();
+            // Do nothing
         }
 
         @Override
