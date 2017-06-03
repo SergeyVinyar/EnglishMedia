@@ -7,6 +7,7 @@ import android.os.HandlerThread;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +18,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 import static org.mockito.Mockito.*;
@@ -34,32 +36,54 @@ import okio.BufferedSource;
 @RunWith(AndroidJUnit4.class)
 public class PlayerImplTest {
 
+    private Context testAppContext;
+    private Context targetContext;
+
     private HandlerThread handlerThread;
     private Handler handler;
 
-    private Context targetContext;
-    private Context testAppContext;
-    private AudioFocus audioFocus;
-    private OkHttpClient httpClient;
-
+    private Random random = new Random();
     private Player player;
-
-    private static final String FAKE_URL = "http://www.abc.com/test_mp3";
 
     @Before
     public void before() {
-        targetContext = InstrumentationRegistry.getTargetContext();
         testAppContext = InstrumentationRegistry.getContext();
-        audioFocus = mock(AudioFocus.class);
-        httpClient = mock(OkHttpClient.class);
+        targetContext = InstrumentationRegistry.getTargetContext();
     }
 
-    private void PrepareAudioFocusSuccess() {
+    @After
+    public void after() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        runAsync(() -> {
+            player.release();
+            countDownLatch.countDown();
+        });
+        countDownLatch.await();
+    }
+
+    /**
+     * Random URL to avoid cache influence
+     */
+    private Uri getRandomUrl() {
+        return Uri.parse("http://www.abc.com/" + random.nextInt());
+    }
+
+    private AudioFocus PrepareAudioFocusSuccess() {
+        AudioFocus audioFocus = mock(AudioFocus.class);
         when(audioFocus.ensureAudioFocus()).thenReturn(true);
+        return audioFocus;
     }
 
-    private void PrepareHttpSuccess() throws IOException {
+    private AudioFocus PrepareAudioFocusFail() {
+        AudioFocus audioFocus = mock(AudioFocus.class);
+        when(audioFocus.ensureAudioFocus()).thenReturn(false);
+        return audioFocus;
+    }
+
+    private OkHttpClient PrepareHttpSuccess() throws IOException {
         InputStream data = testAppContext.getResources().getAssets().open("test.mp3");
+
+        OkHttpClient httpClient = mock(OkHttpClient.class);
 
         when(httpClient.newCall(any(Request.class))).then(args -> {
             Request request = args.getArgumentAt(0, Request.class);
@@ -94,6 +118,44 @@ public class PlayerImplTest {
             when(call.execute()).thenReturn(response);
             return call;
         });
+
+        return httpClient;
+    }
+
+    private OkHttpClient PrepareHttp404() throws IOException {
+        OkHttpClient httpClient = mock(OkHttpClient.class);
+
+        when(httpClient.newCall(any(Request.class))).then(args -> {
+            Request request = args.getArgumentAt(0, Request.class);
+
+            Response response = new Response.Builder()
+                    .request(request)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(404)
+                    .body(new ResponseBody() {
+                        @Override
+                        public MediaType contentType() {
+                            return MediaType.parse("audio/mpeg");
+                        }
+
+                        @Override
+                        public long contentLength() {
+                            return 0;
+                        }
+
+                        @Override
+                        public BufferedSource source() {
+                            return new Buffer();
+                        }
+                    })
+                    .build();
+
+            Call call = mock(Call.class);
+            when(call.execute()).thenReturn(response);
+            return call;
+        });
+
+        return httpClient;
     }
 
     private void runAsync(Runnable runnable) {
@@ -105,11 +167,15 @@ public class PlayerImplTest {
         handler.post(runnable);
     }
 
+    /**
+     * Normal playback start and stop
+     */
     @Test
     public void playAndStop() throws Exception {
-        PrepareAudioFocusSuccess();
-        PrepareHttpSuccess();
+        AudioFocus audioFocus = PrepareAudioFocusSuccess();
+        OkHttpClient httpClient = PrepareHttpSuccess();
         Player.PlayerListener playerListener = mock(Player.PlayerListener.class);
+        Uri url = getRandomUrl();
 
         CountDownLatch countDownLatch1 = new CountDownLatch(1);
         runAsync(() -> {
@@ -123,12 +189,15 @@ public class PlayerImplTest {
 
         CountDownLatch countDownLatch2 = new CountDownLatch(1);
         runAsync(() -> {
-            player.play(Uri.parse(FAKE_URL), 0);
+            player.play(url, 0);
             countDownLatch2.countDown();
         });
-
         countDownLatch2.await();
-        assertEquals(Uri.parse(FAKE_URL), player.getPlayingUrl());
+
+        // onPlay occurs after initial buffering
+        Thread.sleep(1000);
+
+        assertEquals(url, player.getPlayingUrl());
         verify(audioFocus).ensureAudioFocus();
         verify(playerListener).onPlay();
 
@@ -155,28 +224,85 @@ public class PlayerImplTest {
         verify(playerListener, times(4)).onPositionChanged(onPositionChangedArguments2.capture());
         args = onPositionChangedArguments2.getAllValues();
         assertEquals(args.size(), args.stream().distinct().count());
+    }
 
-        CountDownLatch countDownLatch4 = new CountDownLatch(1);
+    /**
+     * Couldn't acquire audio focus
+     */
+    @Test
+    public void playNoAudioFocus() throws Exception {
+        AudioFocus audioFocus = PrepareAudioFocusFail();
+        OkHttpClient httpClient = PrepareHttpSuccess();
+        Player.PlayerListener playerListener = mock(Player.PlayerListener.class);
+        Uri url = getRandomUrl();
+
+        CountDownLatch countDownLatch1 = new CountDownLatch(1);
         runAsync(() -> {
-            player.release();
-            countDownLatch4.countDown();
+            player = new PlayerImpl(targetContext, audioFocus, httpClient);
+            player.addListener(playerListener);
+            player.play(url, 0);
+            countDownLatch1.countDown();
         });
 
-        countDownLatch4.await();
+        countDownLatch1.await();
+        verify(playerListener).onNoAudioFocus();
+        verify(playerListener, never()).onPlay();
+        verify(playerListener, never()).onPositionChanged(anyInt());
     }
 
+    /**
+     * HTTP 404
+     */
     @Test
-    public void stop() throws Exception {
+    public void playContentNotFound() throws Exception {
+        AudioFocus audioFocus = PrepareAudioFocusSuccess();
+        OkHttpClient httpClient = PrepareHttp404();
+        Player.PlayerListener playerListener = mock(Player.PlayerListener.class);
+        Uri url = getRandomUrl();
 
+        CountDownLatch countDownLatch1 = new CountDownLatch(1);
+        runAsync(() -> {
+            player = new PlayerImpl(targetContext, audioFocus, httpClient);
+            player.addListener(playerListener);
+            player.play(url, 0);
+            countDownLatch1.countDown();
+        });
+        countDownLatch1.await();
+
+        // OkHttp tries to get content several times
+        Thread.sleep(5 * 1000);
+
+        verify(playerListener).onPlay();
+        verify(playerListener).onStop(anyInt());
+        verify(playerListener, atLeastOnce()).onContentNotFound();
+
+        assertEquals(false, player.asExoPlayer().getPlayWhenReady());
     }
 
+    /**
+     * Play until the end of file
+     */
     @Test
-    public void togglePlayStop() throws Exception {
+    public void playToComplete() throws Exception {
+        AudioFocus audioFocus = PrepareAudioFocusSuccess();
+        OkHttpClient httpClient = PrepareHttpSuccess();
+        Player.PlayerListener playerListener = mock(Player.PlayerListener.class);
+        Uri url = getRandomUrl();
 
-    }
+        CountDownLatch countDownLatch1 = new CountDownLatch(1);
+        runAsync(() -> {
+            player = new PlayerImpl(targetContext, audioFocus, httpClient);
+            player.addListener(playerListener);
+            player.play(url, 0);
+            countDownLatch1.countDown();
+        });
 
-    @Test
-    public void getPlayingUrl() throws Exception {
+        countDownLatch1.await();
 
+        // test.mp3 file is 1:41 length
+        Thread.sleep((1 * 60 + 50) * 1000);
+
+        verify(playerListener).onStop(anyInt());
+        verify(playerListener).onCompleted();
     }
 }

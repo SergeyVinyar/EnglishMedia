@@ -111,12 +111,6 @@ import okhttp3.OkHttpClient;
         }
     }
 
-    private void reset() {
-        this.audioFocus.abandonAudioFocus();
-        setPlayWhenReady(false);
-        this.playingUrl = null;
-    }
-
     @Override
     public Uri getPlayingUrl() {
         return this.playingUrl;
@@ -175,10 +169,10 @@ import okhttp3.OkHttpClient;
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            if (playbackState == ExoPlayer.STATE_ENDED) {
+            if (playWhenReady && playbackState == ExoPlayer.STATE_ENDED) {
                 PlayerImpl.this.stop();
                 PlayerImpl.this.playerEventEmitter.onCompleted();
-                reset();
+                PlayerImpl.this.playingUrl = null;
             }
             else if (playWhenReady && playbackState == ExoPlayer.STATE_READY) {
                 PlayerImpl.this.emitNewPosition.run();
@@ -187,7 +181,7 @@ import okhttp3.OkHttpClient;
 
         @Override
         public void onPlayerError(ExoPlaybackException error) {
-            reset();
+            PlayerImpl.this.stop();
         }
 
         @Override
@@ -204,9 +198,8 @@ import okhttp3.OkHttpClient;
     private final ExtractorMediaSource.EventListener extractorEventListener = new ExtractorMediaSource.EventListener() {
         @Override
         public void onLoadError(IOException error) {
-            Throwable cause = error.getCause();
+            Throwable cause = error.getCause() != null ? error.getCause() : error;
             if (cause instanceof ConnectException || cause instanceof UnknownHostException) {
-                reset();
                 PlayerImpl.this.playerEventEmitter.onNoNetwork();
             }
             else if (cause instanceof HttpDataSource.InvalidResponseCodeException) {
@@ -214,7 +207,6 @@ import okhttp3.OkHttpClient;
                 switch (responseCode) {
                     case HttpURLConnection.HTTP_BAD_REQUEST:
                     case HttpURLConnection.HTTP_NOT_FOUND:
-                        reset();
                         PlayerImpl.this.playerEventEmitter.onContentNotFound();
                         break;
                 }

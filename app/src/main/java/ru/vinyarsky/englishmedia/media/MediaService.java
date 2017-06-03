@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.reactivex.Observable;
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -190,82 +189,63 @@ public class MediaService extends Service {
         @Override
         public void onPlay() {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
-            if (playingUrl != null) {
-                registerReceiver(MediaService.this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+            registerReceiver(MediaService.this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
-                Notification notification = new Notification.Builder(MediaService.this)
-                        .setSmallIcon(R.mipmap.ic_notification)
-                        .setContentTitle(getResources().getString(R.string.media_service_notification_title))
-                        .build();
-                startForeground(123, notification);
+            Notification notification = new Notification.Builder(MediaService.this)
+                    .setSmallIcon(R.mipmap.ic_notification)
+                    .setContentTitle(getResources().getString(R.string.media_service_notification_title))
+                    .build();
+            startForeground(123, notification);
+            MediaService.this.compositeDisposable.add(
+                    Observable.just(playingUrl)
+                            .subscribeOn(Schedulers.io())
+                            .subscribe(url -> {
+                                EMApplication app = (EMApplication) getApplication();
+                                Episode.setStatusListeningIfRequired(app.getDbHelper(), url.toString());
+                                this.broadcastEmitEpisodeStatusChanged();
+                            }));
 
-                MediaService.this.compositeDisposable.add(
-                        Observable.just(playingUrl)
-                                .subscribeOn(Schedulers.io())
-                                .subscribe(url -> {
-                                    EMApplication app = (EMApplication) getApplication();
-                                    Episode.setStatusListeningIfRequired(app.getDbHelper(), url.toString());
-                                    this.broadcastEmitEpisodeStatusChanged();
-                                }));
-            }
         }
 
         @Override
         public void onPositionChanged(int positionSec) {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
-            if (playingUrl != null) {
-                MediaService.this.compositeDisposable.add(
-                        Observable.just(playingUrl)
-                                .subscribeOn(Schedulers.io())
-                                .subscribe(url -> {
-                                    EMApplication app = (EMApplication) getApplication();
-                                    Episode.updatePosition(app.getDbHelper(), url.toString(), positionSec);
-                                }));
-            }
+            MediaService.this.compositeDisposable.add(
+                    Observable.just(playingUrl)
+                            .subscribeOn(Schedulers.io())
+                            .subscribe(url -> {
+                                EMApplication app = (EMApplication) getApplication();
+                                Episode.updatePosition(app.getDbHelper(), url.toString(), positionSec);
+                            }));
         }
 
         @Override
         public void onStop(int positionSec) {
             stopForeground(true);
-            try {
-                unregisterReceiver(MediaService.this.becomingNoisyReceiver);
-            } catch (Exception e) {
-                // Sometimes we can get here before onPlay completion.
-                // So avoid exception of unregistering not registered receiver.
-            }
+            unregisterReceiver(MediaService.this.becomingNoisyReceiver);
             onPositionChanged(positionSec);
         }
 
         @Override
         public void onCompleted() {
-            stopForeground(true);
-            try {
-                unregisterReceiver(MediaService.this.becomingNoisyReceiver);
-            } catch (Exception e) {
-                // Sometimes we can get here before onPlay completion.
-                // So avoid exception of unregistering not registered receiver.
-            }
-
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
-            if (playingUrl != null) {
-                EMApplication app = (EMApplication) getApplication();
-                if (binded) {
-                    MediaService.this.compositeDisposable.add(
-                            Observable.just(playingUrl)
-                                    .subscribeOn(Schedulers.io())
-                                    .doOnNext(url -> {
-                                        Episode.setStatusCompleted(app.getDbHelper(), url.toString());
-                                    })
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe(url -> {
-                                        MediaService.this.mediaServiceEventManager.onEpisodeChanged(null, null);
-                                        this.broadcastEmitEpisodeStatusChanged();
-                                    }));
-                }
-                else {
-                    Episode.setStatusCompleted(app.getDbHelper(), playingUrl.toString());
-                    MediaService.this.stopSelf();
-                }
+            EMApplication app = (EMApplication) getApplication();
+            if (binded) {
+                MediaService.this.compositeDisposable.add(
+                        Observable.just(playingUrl)
+                                .subscribeOn(Schedulers.io())
+                                .doOnNext(url -> {
+                                    Episode.setStatusCompleted(app.getDbHelper(), url.toString());
+                                })
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(url -> {
+                                    MediaService.this.mediaServiceEventManager.onEpisodeChanged(null, null);
+                                    this.broadcastEmitEpisodeStatusChanged();
+                                }));
+            }
+            else {
+                Episode.setStatusCompleted(app.getDbHelper(), playingUrl.toString());
+                MediaService.this.stopSelf();
             }
         }
 
