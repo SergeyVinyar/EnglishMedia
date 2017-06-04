@@ -173,6 +173,7 @@ import okhttp3.OkHttpClient;
                 PlayerImpl.this.stop();
                 PlayerImpl.this.playerEventEmitter.onCompleted();
                 PlayerImpl.this.playingUrl = null;
+                PlayerImpl.super.stop();
             }
             else if (playWhenReady && playbackState == ExoPlayer.STATE_READY) {
                 PlayerImpl.this.emitNewPosition.run();

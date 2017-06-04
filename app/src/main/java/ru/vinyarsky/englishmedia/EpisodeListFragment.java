@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -301,6 +302,10 @@ public class EpisodeListFragment extends Fragment {
         private Cursor episodesCursor;
         private Set<Integer> expandedPositions = new ArraySet<>();
 
+        private Supplier<Cursor> getEpisodesCursor = () -> {
+            return episodesCursor;
+        };
+
         RecyclerViewAdapter(Podcast podcast, Cursor episodesCursor) {
             this.podcast = podcast;
             this.episodesCursor = episodesCursor;
@@ -321,7 +326,7 @@ public class EpisodeListFragment extends Fragment {
             }
             else { // EPISODE_VIEWTYPE
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
-                return new EpisodeViewHolder(v, episodesCursor, this);
+                return new EpisodeViewHolder(v, getEpisodesCursor, this);
             }
         }
 
@@ -404,7 +409,7 @@ public class EpisodeListFragment extends Fragment {
                         episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case COMPLETED:
-                        episodeViewHolder.statusView.setVisibility(View.GONE);
+                        episodeViewHolder.statusView.setVisibility(View.INVISIBLE);
                         break;
                 }
 
@@ -501,7 +506,7 @@ public class EpisodeListFragment extends Fragment {
         private TextView moreView;
         private Space bottomSpaceView;
 
-        EpisodeViewHolder(View itemView, Cursor cursor, RecyclerViewAdapter adapter) {
+        EpisodeViewHolder(View itemView, Supplier<Cursor> getEpisodesCursor, RecyclerViewAdapter adapter) {
             super(itemView);
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
@@ -525,6 +530,7 @@ public class EpisodeListFragment extends Fragment {
 
             constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
+                    Cursor cursor = getEpisodesCursor.get();
                     cursor.moveToPosition(getAdapterPosition() - 1);
                     UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.CODE)));
                     mListener.onPlayPauseEpisode(code);
