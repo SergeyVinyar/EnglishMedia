@@ -38,12 +38,14 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
+
+import com.annimon.stream.function.Supplier;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
+
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 import ru.vinyarsky.englishmedia.media.MediaService;
@@ -302,7 +304,7 @@ public class EpisodeListFragment extends Fragment {
         private Cursor episodesCursor;
         private Set<Integer> expandedPositions = new ArraySet<>();
 
-        private Supplier<Cursor> getEpisodesCursor = () -> {
+        private Cursor getEpisodesCursor() {
             return episodesCursor;
         };
 
@@ -326,7 +328,7 @@ public class EpisodeListFragment extends Fragment {
             }
             else { // EPISODE_VIEWTYPE
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
-                return new EpisodeViewHolder(v, getEpisodesCursor, this);
+                return new EpisodeViewHolder(v, this::getEpisodesCursor, this);
             }
         }
 
