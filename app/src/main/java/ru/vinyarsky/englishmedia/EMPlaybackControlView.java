@@ -3,16 +3,14 @@ package ru.vinyarsky.englishmedia;
 import android.content.Context;
 import android.support.design.widget.BottomSheetBehavior;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.TextView;
 
-import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ui.PlaybackControlView;
 
 import ru.vinyarsky.englishmedia.media.MediaService;
 
 /**
- * Standard PlaybackControlView + podcast title view and episode title view
+ * Standard PlaybackControlView from ExpPlayer + podcast title view and episode title view
  */
 public class EMPlaybackControlView extends PlaybackControlView {
 

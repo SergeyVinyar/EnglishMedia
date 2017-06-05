@@ -23,6 +23,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Space;
 
+import com.google.firebase.crash.FirebaseCrash;
+
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
@@ -237,8 +239,8 @@ public class PodcastListFragment extends Fragment {
                 }
             });
 
+            String uriAsString = cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH));
             try {
-                String uriAsString = cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH));
                 Bitmap bitmap = imageCache.get(uriAsString);
                 if (bitmap == null) {
                     bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(uriAsString));
@@ -247,6 +249,8 @@ public class PodcastListFragment extends Fragment {
                 holder.podcastImageView.setImageBitmap(bitmap);
             } catch (IOException e) {
                 // OK, no image then...
+                FirebaseCrash.log(uriAsString);
+                FirebaseCrash.report(e);
             }
 
             // Add empty space at the bottom to the last item otherwise item hides behind

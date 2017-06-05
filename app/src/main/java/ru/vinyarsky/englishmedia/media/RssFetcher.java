@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import com.annimon.stream.function.Supplier;
+import com.google.firebase.crash.FirebaseCrash;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -59,6 +60,9 @@ public final class RssFetcher {
                             }
                         }
                     }
+                    else {
+                        FirebaseCrash.report(new Exception(String.format("podcast == null (podcastCode: %s)", podcastCode != null ? podcastCode.toString() : "null")));
+                    }
                     return 0;
                 })
                 .reduce(0, (acc, value) -> acc + value)
@@ -74,8 +78,10 @@ public final class RssFetcher {
         int count = 0;
         try {
             parser.require(XmlPullParser.START_TAG, null, "rss");
-            if (!"2.0".equals(parser.getAttributeValue(null, "version")))
-                throw new XmlPullParserException("rss version must be 2.0");
+            if (!"2.0".equals(parser.getAttributeValue(null, "version"))) {
+                FirebaseCrash.report(new Exception(String.format("rss version must be 2.0 (podcastCode: %s)", podcastCode != null ? podcastCode.toString() : "null")));
+                return count;
+            }
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
                 if (parser.getEventType() != XmlPullParser.START_TAG)
                     continue;
@@ -97,7 +103,7 @@ public final class RssFetcher {
                 }
             }
         } catch (XmlPullParserException | IOException e) {
-            // Nothing we can do here
+            FirebaseCrash.report(e);
         }
         return count;
     }

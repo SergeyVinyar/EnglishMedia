@@ -1,21 +1,10 @@
 package ru.vinyarsky.englishmedia.db;
 
-import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.ReplaySubject;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
 

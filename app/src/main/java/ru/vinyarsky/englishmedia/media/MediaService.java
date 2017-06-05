@@ -40,6 +40,7 @@ public class MediaService extends Service {
     public static final String CONTENT_NOT_FOUND_BROADCAST_ACTION = "ru.vinyarsky.englishmedia.action.content_not_found";
 
     public static final String EPISODE_CODE_EXTRA = "episode_code";
+    public static final String EPISODE_URL_EXTRA = "episode_url";
 
     /**
      * Service is now binded
@@ -117,6 +118,7 @@ public class MediaService extends Service {
                 break;
             case DOWNLOAD_ACTION:
                 throw new IllegalArgumentException();
+// TODO
 //                if (intent.getData() != null) {
 //                    download(intent.getData());
 //                }
@@ -178,6 +180,7 @@ public class MediaService extends Service {
         @Override
         public void onContentNotFound() {
             Intent broadcast_intent = new Intent(CONTENT_NOT_FOUND_BROADCAST_ACTION);
+            broadcast_intent.putExtra(EPISODE_URL_EXTRA, MediaService.this.player.getPlayingUrl());
             MediaService.this.broadcastManager.sendBroadcast(broadcast_intent);
         }
 
