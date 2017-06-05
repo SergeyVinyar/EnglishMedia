@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
@@ -111,6 +112,12 @@ public class MediaService extends Service {
                                                         .map((podcastCode) -> Podcast.read(((EMApplication) getApplication()).getDbHelper(), podcastCode))
                                                         .observeOn(AndroidSchedulers.mainThread())
                                                         .subscribe((podcast) -> {
+                                                            {
+                                                                Bundle bundle = new Bundle();
+                                                                bundle.putString("podcast_title", podcast.getTitle());
+                                                                bundle.putString("episode_title", episode.getTitle());
+                                                                EMApplication.getEmComponent().getFirebaseAnalytics().logEvent("play_episode", bundle);
+                                                            }
                                                             mediaServiceEventManager.onEpisodeChanged(podcast.getTitle(), episode.getTitle());
                                                         }));
                                     }

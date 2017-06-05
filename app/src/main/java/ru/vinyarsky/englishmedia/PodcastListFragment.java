@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
@@ -52,7 +53,13 @@ public class PodcastListFragment extends Fragment {
      * Show podcasts with given podcastLevel
      * @param podcastLevel show all podcasts if null
      */
-    public static PodcastListFragment newInstance(Podcast.PodcastLevel podcastLevel) {
+    public static PodcastListFragment newInstance(@Nullable Podcast.PodcastLevel podcastLevel) {
+        {
+            Bundle bundle = new Bundle();
+            bundle.putString("podcast_level", podcastLevel != null ? podcastLevel.toString() : "all");
+            EMApplication.getEmComponent().getFirebaseAnalytics().logEvent("show_podcast_list", bundle);
+        }
+
         PodcastListFragment fragment = new PodcastListFragment();
 
         Bundle args = new Bundle();

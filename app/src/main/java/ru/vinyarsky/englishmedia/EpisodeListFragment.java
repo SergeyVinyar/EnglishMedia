@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
@@ -72,7 +73,13 @@ public class EpisodeListFragment extends Fragment {
     public EpisodeListFragment() {
     }
 
-    public static EpisodeListFragment newInstance(UUID podcastCode) {
+    public static EpisodeListFragment newInstance(@NonNull UUID podcastCode) {
+        {
+            Bundle bundle = new Bundle();
+            bundle.putString("podcast_code", podcastCode.toString());
+            EMApplication.getEmComponent().getFirebaseAnalytics().logEvent("show_episode_list", bundle);
+        }
+
         EpisodeListFragment fragment =  new EpisodeListFragment();
 
         Bundle args = new Bundle();

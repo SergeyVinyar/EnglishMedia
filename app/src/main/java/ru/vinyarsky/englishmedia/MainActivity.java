@@ -9,6 +9,7 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
@@ -194,7 +195,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onSelectPodcast(UUID podcastCode) {
+    public void onSelectPodcast(@NonNull UUID podcastCode) {
         showEpisodeList(podcastCode);
     }
 
@@ -248,7 +249,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * @param podcastLevel Show all podcasts if null
      */
-    private void showPodcastList(Podcast.PodcastLevel podcastLevel) {
+    private void showPodcastList(@Nullable Podcast.PodcastLevel podcastLevel) {
         setDefaultTitle();
 
         String fragmentTag = PodcastListFragment.class.getName();
@@ -277,7 +278,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void showEpisodeList(UUID podcastCode) {
+    private void showEpisodeList(@NonNull UUID podcastCode) {
         setDefaultTitle();
 
         Fragment oldFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);;

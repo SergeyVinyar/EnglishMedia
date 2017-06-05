@@ -2,6 +2,8 @@ package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import javax.inject.Singleton;
 
 import dagger.Module;
@@ -20,5 +22,11 @@ public class EMModule {
     @Singleton
     public Context getContext() {
         return this.context;
+    }
+
+    @Provides
+    @Singleton
+    public FirebaseAnalytics getFirebaseAnalytics() {
+        return FirebaseAnalytics.getInstance(context);
     }
 }
