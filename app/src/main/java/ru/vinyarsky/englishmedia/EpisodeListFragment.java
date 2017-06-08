@@ -80,7 +80,7 @@ public class EpisodeListFragment extends Fragment {
             EMApplication.getEmComponent().getFirebaseAnalytics().logEvent("show_episode_list", bundle);
         }
 
-        EpisodeListFragment fragment =  new EpisodeListFragment();
+        EpisodeListFragment fragment = new EpisodeListFragment();
 
         Bundle args = new Bundle();
         args.putString(PODCAST_CODE_ARG, podcastCode.toString());

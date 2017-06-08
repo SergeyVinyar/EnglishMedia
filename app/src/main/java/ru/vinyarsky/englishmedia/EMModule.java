@@ -27,6 +27,8 @@ public class EMModule {
     @Provides
     @Singleton
     public FirebaseAnalytics getFirebaseAnalytics() {
-        return FirebaseAnalytics.getInstance(context);
+        FirebaseAnalytics firebaseAnalytics = FirebaseAnalytics.getInstance(context);
+        firebaseAnalytics.setAnalyticsCollectionEnabled(true);
+        return firebaseAnalytics;
     }
 }
