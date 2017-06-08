@@ -18,12 +18,6 @@ public class MediaModule {
 
     @Provides
     @MediaScope
-    public OkHttpClient getHttpClient() {
-        return new OkHttpClient();
-    }
-
-    @Provides
-    @MediaScope
     public Player getPlayer(Context context, AudioFocus audioFocus, OkHttpClient httpClient) {
         return new PlayerImpl(context, audioFocus, httpClient);
     }

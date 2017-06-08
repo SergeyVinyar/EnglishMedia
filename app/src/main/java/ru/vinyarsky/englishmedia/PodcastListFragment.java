@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
@@ -34,6 +33,7 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
+import ru.vinyarsky.englishmedia.db.DbHelper;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
 public class PodcastListFragment extends Fragment {
@@ -42,11 +42,14 @@ public class PodcastListFragment extends Fragment {
 
     private static final String PODCAST_LEVEL_ARG_ALL_VALUE = "all";
 
+    private DbHelper dbHelper;
+
     private OnPodcastListFragmentListener mListener;
 
     private CompositeDisposable compositeDisposable;
 
     public PodcastListFragment() {
+        this.dbHelper = EMApplication.getEmComponent().getDbHelper();
     }
 
     /**
@@ -96,13 +99,11 @@ public class PodcastListFragment extends Fragment {
                     Observable.<Cursor>create((emitter) -> {
                         Cursor cursor = null;
 
-                        EMApplication app = (EMApplication) getActivity().getApplication();
-
                         String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
                         if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
-                            cursor = Podcast.readAll(app.getDbHelper());
+                            cursor = Podcast.readAll(PodcastListFragment.this.dbHelper);
                         else
-                            cursor = Podcast.readAllByPodcastLevel(app.getDbHelper(), Podcast.PodcastLevel.valueOf(podcastLevelName));
+                            cursor = Podcast.readAllByPodcastLevel(PodcastListFragment.this.dbHelper, Podcast.PodcastLevel.valueOf(podcastLevelName));
 
                         emitter.onNext(cursor);
                         emitter.onComplete();

@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-import com.annimon.stream.function.Supplier;
 import com.google.firebase.crash.FirebaseCrash;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -28,12 +27,12 @@ import ru.vinyarsky.englishmedia.db.Podcast;
 
 public final class RssFetcher {
 
-    private Supplier<DbHelper> dbHelperSupplier;
-    private Supplier<OkHttpClient> httpClientSupplier;
+    private DbHelper dbHelper;
+    private OkHttpClient httpClient;
 
-    public RssFetcher(Supplier<DbHelper> dbHelperSupplier, Supplier<OkHttpClient> httpClientSupplier) {
-        this.dbHelperSupplier = dbHelperSupplier;
-        this.httpClientSupplier = httpClientSupplier;
+    public RssFetcher(DbHelper dbHelper, OkHttpClient httpClient) {
+        this.dbHelper = dbHelper;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -44,12 +43,12 @@ public final class RssFetcher {
         return Observable.fromIterable(podcastCodes)
                 .subscribeOn(Schedulers.io())
                 .map((podcastCode) -> {
-                    Podcast podcast = Podcast.read(this.dbHelperSupplier.get(), podcastCode);
+                    Podcast podcast = Podcast.read(this.dbHelper, podcastCode);
                     if (podcast != null) {
                         Request request = new Request.Builder()
                                 .url(podcast.getRssUrl())
                                 .build();
-                        try (Response response = httpClientSupplier.get().newCall(request).execute()) {
+                        try (Response response = this.httpClient.newCall(request).execute()) {
                             if (response.isSuccessful()) {
                                 XmlPullParser parser = Xml.newPullParser();
                                 parser.setInput(response.body().charStream());
@@ -89,10 +88,10 @@ public final class RssFetcher {
                     continue;
                 Episode episode = parseRssItem(parser);
                 if (episode.getEpisodeGuid() != null && episode.getContentUrl() != null) {
-                    boolean alreadyInDb = Episode.existsByPodcastCodeAndGuid(this.dbHelperSupplier.get(), podcastCode, episode.getEpisodeGuid());
+                    boolean alreadyInDb = Episode.existsByPodcastCodeAndGuid(this.dbHelper, podcastCode, episode.getEpisodeGuid());
                     if (!alreadyInDb) {
                         episode.setPodcastCode(podcastCode);
-                        episode.write(this.dbHelperSupplier.get());
+                        episode.write(this.dbHelper);
                         count++;
                     }
                     else {

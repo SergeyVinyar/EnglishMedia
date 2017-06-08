@@ -47,14 +47,19 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
+import ru.vinyarsky.englishmedia.db.DbHelper;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 import ru.vinyarsky.englishmedia.media.MediaService;
+import ru.vinyarsky.englishmedia.media.RssFetcher;
 
 public class EpisodeListFragment extends Fragment {
 
     private static final String PODCAST_CODE_ARG = "podcast_code";
     private static final String STATE_VIEWPAGER_CURRENT_ITEM = "viewpager_current_item";
+
+    private DbHelper dbHelper;
+    private RssFetcher rssFetcher;
 
     private OnEpisodeListFragmentListener mListener;
 
@@ -71,6 +76,8 @@ public class EpisodeListFragment extends Fragment {
     };
 
     public EpisodeListFragment() {
+        this.dbHelper = EMApplication.getEmComponent().getDbHelper();
+        this.rssFetcher = EMApplication.getEmComponent().getRssFetcher();
     }
 
     public static EpisodeListFragment newInstance(@NonNull UUID podcastCode) {
@@ -178,25 +185,24 @@ public class EpisodeListFragment extends Fragment {
             views[ALL_EPISODES_PAGE].setItemAnimator(new DefaultItemAnimator());
             views[ALL_EPISODES_PAGE].setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-            EMApplication app = (EMApplication)getActivity().getApplication();
             UUID podcastCode = UUID.fromString(getArguments().getString(PODCAST_CODE_ARG));
 
             mListener.showProgress();
             try {
                 // Podcast.read
                 Observable<Podcast> podcastObservable = Observable.just(podcastCode)
-                        .map((code) -> Podcast.read(app.getDbHelper(), code));
+                        .map((code) -> Podcast.read(EpisodeListFragment.this.dbHelper, code));
 
                 Observable<Cursor[]> episodesObservable = Observable.create(emitter -> {
                     // First of all show to the user episodes from Db...
                     Cursor[] oldCursors = new Cursor[2];
-                    oldCursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
-                    oldCursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                    oldCursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    oldCursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
                     emitter.onNext(oldCursors);
 
                     // ...then fetch new episodes
                     try {
-                        app.getRssFetcher().fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
+                        EpisodeListFragment.this.rssFetcher.fetchEpisodesAsync(Collections.singletonList(podcastCode)).get();
                     }
                     catch (InterruptedException e) { // https://github.com/ReactiveX/RxJava/issues/4863
                         if (!emitter.isDisposed()) {
@@ -211,8 +217,8 @@ public class EpisodeListFragment extends Fragment {
 
                     // ...and show refreshed data
                     Cursor[] newCursors = new Cursor[2];
-                    newCursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
-                    newCursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                    newCursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    newCursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
                     emitter.onNext(newCursors);
 
                     emitter.onComplete();
@@ -257,8 +263,8 @@ public class EpisodeListFragment extends Fragment {
                             .observeOn(Schedulers.io())
                             .map((podcastCode) -> {
                                 Cursor[] cursors = new Cursor[2];
-                                cursors[0] = Episode.readNewByPodcastCode(app.getDbHelper(), podcastCode);
-                                cursors[1] = Episode.readAllByPodcastCode(app.getDbHelper(), podcastCode);
+                                cursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                                cursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
                                 return cursors;
                             })
                             .observeOn(AndroidSchedulers.mainThread())

@@ -26,6 +26,7 @@ import io.reactivex.schedulers.Schedulers;
 import ru.vinyarsky.englishmedia.EMApplication;
 import ru.vinyarsky.englishmedia.EMPlaybackControlView;
 import ru.vinyarsky.englishmedia.R;
+import ru.vinyarsky.englishmedia.db.DbHelper;
 import ru.vinyarsky.englishmedia.db.Episode;
 import ru.vinyarsky.englishmedia.db.Podcast;
 
@@ -49,6 +50,7 @@ public class MediaService extends Service {
     private boolean binded = false;
 
     private Player player;
+    private DbHelper dbHelper;
 
     private CompositeDisposable compositeDisposable;
 
@@ -59,6 +61,7 @@ public class MediaService extends Service {
     public MediaService() {
         super();
         this.player = EMApplication.getMediaComponent().getPlayer();
+        this.dbHelper = EMApplication.getEmComponent().getDbHelper();
     }
 
     public static Intent newPlayPauseToggleIntent(Context appContext, UUID episodeCode) {
@@ -97,7 +100,7 @@ public class MediaService extends Service {
                 this.compositeDisposable.add(
                         Observable.just((UUID) intent.getSerializableExtra(EPISODE_CODE_EXTRA))
                                 .subscribeOn(Schedulers.io())
-                                .map((episodeCode) -> Episode.read(((EMApplication) getApplication()).getDbHelper(), episodeCode))
+                                .map((episodeCode) -> Episode.read(this.dbHelper, episodeCode))
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe((episode) -> {
                                     Uri contentUrl = Uri.parse(episode.getContentUrl());
@@ -109,7 +112,7 @@ public class MediaService extends Service {
                                         this.compositeDisposable.add(
                                                 Observable.just(episode.getPodcastCode())
                                                         .subscribeOn(Schedulers.io())
-                                                        .map((podcastCode) -> Podcast.read(((EMApplication) getApplication()).getDbHelper(), podcastCode))
+                                                        .map((podcastCode) -> Podcast.read(this.dbHelper, podcastCode))
                                                         .observeOn(AndroidSchedulers.mainThread())
                                                         .subscribe((podcast) -> {
                                                             {
@@ -210,8 +213,7 @@ public class MediaService extends Service {
                     Observable.just(playingUrl)
                             .subscribeOn(Schedulers.io())
                             .subscribe(url -> {
-                                EMApplication app = (EMApplication) getApplication();
-                                Episode.setStatusListeningIfRequired(app.getDbHelper(), url.toString());
+                                Episode.setStatusListeningIfRequired(MediaService.this.dbHelper, url.toString());
                                 this.broadcastEmitEpisodeStatusChanged();
                             }));
 
@@ -224,8 +226,7 @@ public class MediaService extends Service {
                     Observable.just(playingUrl)
                             .subscribeOn(Schedulers.io())
                             .subscribe(url -> {
-                                EMApplication app = (EMApplication) getApplication();
-                                Episode.updatePosition(app.getDbHelper(), url.toString(), positionSec);
+                                Episode.updatePosition(MediaService.this.dbHelper, url.toString(), positionSec);
                             }));
         }
 
@@ -239,13 +240,12 @@ public class MediaService extends Service {
         @Override
         public void onCompleted() {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
-            EMApplication app = (EMApplication) getApplication();
             if (binded) {
                 MediaService.this.compositeDisposable.add(
                         Observable.just(playingUrl)
                                 .subscribeOn(Schedulers.io())
                                 .doOnNext(url -> {
-                                    Episode.setStatusCompleted(app.getDbHelper(), url.toString());
+                                    Episode.setStatusCompleted(MediaService.this.dbHelper, url.toString());
                                 })
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(url -> {
@@ -254,7 +254,7 @@ public class MediaService extends Service {
                                 }));
             }
             else {
-                Episode.setStatusCompleted(app.getDbHelper(), playingUrl.toString());
+                Episode.setStatusCompleted(MediaService.this.dbHelper, playingUrl.toString());
                 MediaService.this.stopSelf();
             }
         }
