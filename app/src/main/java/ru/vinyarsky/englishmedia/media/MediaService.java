@@ -44,11 +44,6 @@ public class MediaService extends Service {
     public static final String EPISODE_CODE_EXTRA = "episode_code";
     public static final String EPISODE_URL_EXTRA = "episode_url";
 
-    /**
-     * Service is now binded
-     */
-    private boolean binded = false;
-
     private Player player;
     private DbHelper dbHelper;
 
@@ -139,13 +134,11 @@ public class MediaService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        this.binded = true;
         return new MediaServiceBinder();
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        this.binded = false;
         return false;
     }
 
@@ -240,23 +233,18 @@ public class MediaService extends Service {
         @Override
         public void onCompleted() {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
-            if (binded) {
-                MediaService.this.compositeDisposable.add(
-                        Observable.just(playingUrl)
-                                .subscribeOn(Schedulers.io())
-                                .doOnNext(url -> {
-                                    Episode.setStatusCompleted(MediaService.this.dbHelper, url.toString());
-                                })
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(url -> {
-                                    MediaService.this.mediaServiceEventManager.onEpisodeChanged(null, null);
-                                    this.broadcastEmitEpisodeStatusChanged();
-                                }));
-            }
-            else {
-                Episode.setStatusCompleted(MediaService.this.dbHelper, playingUrl.toString());
-                MediaService.this.stopSelf();
-            }
+            MediaService.this.compositeDisposable.add(
+                    Observable.just(playingUrl)
+                            .subscribeOn(Schedulers.io())
+                            .doOnNext(url -> {
+                                Episode.setStatusCompleted(MediaService.this.dbHelper, url.toString());
+                            })
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(url -> {
+                                MediaService.this.mediaServiceEventManager.onEpisodeChanged(null, null);
+                                this.broadcastEmitEpisodeStatusChanged();
+                                MediaService.this.stopSelf();
+                            }));
         }
 
         private void broadcastEmitEpisodeStatusChanged() {

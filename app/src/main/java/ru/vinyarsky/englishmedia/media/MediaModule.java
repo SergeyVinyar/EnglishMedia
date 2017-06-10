@@ -17,7 +17,7 @@ public class MediaModule {
     }
 
     @Provides
-    @MediaScope
+    // @MediaScope - Player should be recreated every time MediaService starts
     public Player getPlayer(Context context, AudioFocus audioFocus, OkHttpClient httpClient) {
         return new PlayerImpl(context, audioFocus, httpClient);
     }
