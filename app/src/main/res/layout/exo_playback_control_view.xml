@@ -22,7 +22,6 @@
     android:layout_gravity="bottom"
     android:layoutDirection="ltr"
     android:background="@drawable/control_background"
-
     android:orientation="vertical">
 
     <LinearLayout

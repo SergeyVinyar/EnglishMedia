@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity
 
             EMPlaybackControlView controlView = (EMPlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
             MainActivity.this.mediaServiceBinder.mountPlaybackControlView(controlView);
-            controlView.setShowTimeoutMs(-1);
-            controlView.show();
         }
 
         @Override

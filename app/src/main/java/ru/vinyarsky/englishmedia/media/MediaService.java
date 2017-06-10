@@ -90,6 +90,8 @@ public class MediaService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null)
+            return START_NOT_STICKY;
         switch (intent.getAction()) {
             case PLAY_PAUSE_TOGGLE_ACTION:
                 this.compositeDisposable.add(
@@ -238,6 +240,7 @@ public class MediaService extends Service {
                             .subscribeOn(Schedulers.io())
                             .doOnNext(url -> {
                                 Episode.setStatusCompleted(MediaService.this.dbHelper, url.toString());
+                                Episode.updatePosition(MediaService.this.dbHelper, url.toString(), 0);
                             })
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(url -> {

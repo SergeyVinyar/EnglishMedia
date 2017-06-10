@@ -22,12 +22,14 @@ public class EMPlaybackControlView extends PlaybackControlView {
         // No chosen episode? No annoying control view
         BottomSheetBehavior behavior = BottomSheetBehavior.from(this);
         if (episodeTitle == null) {
+            hide();
             behavior.setHideable(true);
             behavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         }
         else {
             behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             behavior.setHideable(false);
+            show();
         }
     };
 
@@ -46,6 +48,7 @@ public class EMPlaybackControlView extends PlaybackControlView {
         super(context, attrs, defStyleAttr);
         this.podcastTitleView = (TextView) findViewById(R.id.textView_exo_playback_control_podcast_title);
         this.episodeTitleView = (TextView) findViewById(R.id.textView_exo_playback_control_episode_title);
+        setShowTimeoutMs(-1);
     }
 
     public void setMediaServiceEventManager(MediaService.MediaServiceEventManager mediaServiceEventManager) {
