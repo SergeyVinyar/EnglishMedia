@@ -122,14 +122,6 @@ public class PodcastListFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
-        if (podcastLevelName != null && !PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
-            mListener.setTitle(podcastLevelName.toLowerCase());
-    }
-
-    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         if (context instanceof OnPodcastListFragmentListener) {
@@ -138,6 +130,14 @@ public class PodcastListFragment extends Fragment {
             throw new RuntimeException(context.toString()
                     + " must implement " + OnPodcastListFragmentListener.class.getSimpleName());
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
+        if (podcastLevelName != null && !PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
+            mListener.setTitle(podcastLevelName.toLowerCase());
     }
 
     @Override

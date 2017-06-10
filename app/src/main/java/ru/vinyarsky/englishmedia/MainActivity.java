@@ -110,23 +110,25 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         String podcastLevelName = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE).getString(PODCASTLEVEL_PREFERENCE, PODCASTLEVEL_PREFERENCE_ALL_VALUE);
 
-        if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName)) {
-            showPodcastList(null);
-            navigationView.setCheckedItem(R.id.menuitem_drawer_all);
-        }
-        else {
-            Podcast.PodcastLevel podcastLevel = Podcast.PodcastLevel.valueOf(podcastLevelName);
-            showPodcastList(podcastLevel);
-            switch (podcastLevel) {
-                case BEGINNER:
-                    navigationView.setCheckedItem(R.id.menuitem_drawer_beginner);
-                    break;
-                case INTERMEDIATE:
-                    navigationView.setCheckedItem(R.id.menuitem_drawer_intermediate);
-                    break;
-                case ADVANCED:
-                    navigationView.setCheckedItem(R.id.menuitem_drawer_advanced);
-                    break;
+        Fragment existedFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);
+        if (existedFragment == null) {
+            if (PODCASTLEVEL_PREFERENCE_ALL_VALUE.equals(podcastLevelName)) {
+                showPodcastList(null);
+                navigationView.setCheckedItem(R.id.menuitem_drawer_all);
+            } else {
+                Podcast.PodcastLevel podcastLevel = Podcast.PodcastLevel.valueOf(podcastLevelName);
+                showPodcastList(podcastLevel);
+                switch (podcastLevel) {
+                    case BEGINNER:
+                        navigationView.setCheckedItem(R.id.menuitem_drawer_beginner);
+                        break;
+                    case INTERMEDIATE:
+                        navigationView.setCheckedItem(R.id.menuitem_drawer_intermediate);
+                        break;
+                    case ADVANCED:
+                        navigationView.setCheckedItem(R.id.menuitem_drawer_advanced);
+                        break;
+                }
             }
         }
     }
