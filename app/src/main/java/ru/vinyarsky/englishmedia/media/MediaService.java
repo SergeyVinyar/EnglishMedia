@@ -195,6 +195,12 @@ public class MediaService extends Service {
         }
 
         @Override
+        public void onResetDueError() {
+            MediaService.this.mediaServiceEventManager.onEpisodeChanged(null, null);
+            MediaService.this.stopSelf();
+        }
+
+        @Override
         public void onPlay() {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
             registerReceiver(MediaService.this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));

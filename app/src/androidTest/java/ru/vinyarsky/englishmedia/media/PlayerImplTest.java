@@ -360,6 +360,7 @@ public class PlayerImplTest {
         verify(playerListener).onPlay();
         verify(playerListener).onStop(anyInt());
         verify(playerListener, atLeastOnce()).onContentNotFound();
+        verify(playerListener).onResetDueError();
 
         assertEquals(false, player.asExoPlayer().getPlayWhenReady());
     }

@@ -30,6 +30,8 @@ public interface Player {
         void onContentNotFound();
         void onNoAudioFocus();
 
+        void onResetDueError();
+
         void onPlay();
         void onPositionChanged(int positionSec);
         void onStop(int positionSec);

@@ -183,6 +183,9 @@ import okhttp3.OkHttpClient;
         @Override
         public void onPlayerError(ExoPlaybackException error) {
             PlayerImpl.this.stop();
+            PlayerImpl.this.playerEventEmitter.onResetDueError();
+            PlayerImpl.this.playingUrl = null;
+            PlayerImpl.super.stop();
         }
 
         @Override
@@ -244,6 +247,12 @@ import okhttp3.OkHttpClient;
         public void onNoAudioFocus() {
             for (PlayerListener listener: PlayerImpl.this.listeners)
                 listener.onNoAudioFocus();
+        }
+
+        @Override
+        public void onResetDueError() {
+            for (PlayerListener listener: PlayerImpl.this.listeners)
+                listener.onResetDueError();
         }
 
         @Override
