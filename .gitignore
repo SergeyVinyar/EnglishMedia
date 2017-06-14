@@ -8,3 +8,5 @@
 /captures
 .externalNativeBuild
 /app/google-services.json
+Keystore.jks
+/app/app-release.apk
