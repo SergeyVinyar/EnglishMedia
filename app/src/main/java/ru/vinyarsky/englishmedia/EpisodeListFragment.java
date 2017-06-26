@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
@@ -234,19 +233,40 @@ public class EpisodeListFragment extends Fragment {
                     emitter.onComplete();
                 });
 
+                class CombineResult {
+                    Podcast podcast;
+                    Episode[][] episodes;
+                }
+
                 compositeDisposable.add(
-                        Observable.combineLatest(podcastObservable, episodesObservable, (podcast, episodes) -> new RecyclerViewAdapter[] {
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[ALL_INDEX]),
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[NEW_INDEX])
+                        Observable.combineLatest(podcastObservable, episodesObservable, (podcast, episodes) -> {
+                            CombineResult combineResult = new CombineResult();
+                            combineResult.podcast = podcast;
+                            combineResult.episodes = episodes;
+                            return combineResult;
                         })
                         .materialize() // We want to get all the emitted data before onError
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(notification -> {
                             if (notification.isOnNext()) {
-                                RecyclerViewAdapter[] adapters = notification.getValue();
-                                views[ALL_EPISODES_PAGE].setAdapter(adapters[ALL_INDEX]);
-                                views[NEW_EPISODES_PAGE].setAdapter(adapters[NEW_INDEX]);
+                                CombineResult combineResult = notification.getValue();
+
+                                if (views[ALL_EPISODES_PAGE].getAdapter() == null) {
+                                    RecyclerViewAdapter adapter = new EpisodeListFragment.RecyclerViewAdapter(combineResult.podcast, combineResult.episodes[ALL_INDEX]);
+                                    views[ALL_EPISODES_PAGE].setAdapter(adapter);
+                                }
+                                else {
+                                    ((RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodes(combineResult.episodes[ALL_INDEX]);
+                                }
+
+                                if (views[NEW_EPISODES_PAGE].getAdapter() == null) {
+                                    RecyclerViewAdapter adapter = new EpisodeListFragment.RecyclerViewAdapter(combineResult.podcast, combineResult.episodes[NEW_INDEX]);
+                                    views[NEW_EPISODES_PAGE].setAdapter(adapter);
+                                }
+                                else {
+                                    ((RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodes(combineResult.episodes[NEW_INDEX]);
+                                }
                             }
                             else if (notification.isOnError()) {
                                 Snackbar.make(views[NEW_EPISODES_PAGE], R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
@@ -281,8 +301,8 @@ public class EpisodeListFragment extends Fragment {
                             })
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe((episodes) -> {
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[ALL_INDEX]);
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[NEW_INDEX]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodes(episodes[ALL_INDEX]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodes(episodes[NEW_INDEX]);
                             }));
         }
 
@@ -512,7 +532,7 @@ public class EpisodeListFragment extends Fragment {
             }
         }
 
-        void swapEpisodesCursor(Episode[] episodes) {
+        void swapEpisodes(Episode[] episodes) {
             this.episodes = episodes;
             this.notifyDataSetChanged();
         }
