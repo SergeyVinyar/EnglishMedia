@@ -40,6 +40,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.annimon.stream.Stream;
 import com.annimon.stream.function.Supplier;
 
 import io.reactivex.Observable;
@@ -172,6 +173,9 @@ public class EpisodeListFragment extends Fragment {
 
         private final static int PAGE_COUNT = 2;
 
+        private final static int ALL_INDEX = 0;
+        private final static int NEW_INDEX = 1;
+
         RecyclerView[] views = new RecyclerView[PAGE_COUNT];
 
         CustomPagerAdapter() {
@@ -196,8 +200,11 @@ public class EpisodeListFragment extends Fragment {
                 Observable<Episode[][]> episodesObservable = Observable.create(emitter -> {
                     // First of all show to the user episodes from Db...
                     Episode[][] oldEpisodes = new Episode[2][];
-                    oldEpisodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    oldEpisodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    oldEpisodes[ALL_INDEX] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    oldEpisodes[NEW_INDEX] = Stream.of(oldEpisodes[ALL_INDEX])
+                            .filter(episode -> Episode.EpisodeStatus.NEW.equals(episode.getStatus()) || Episode.EpisodeStatus.LISTENING.equals(episode.getStatus()))
+                            .toArray(Episode[]::new);
+
                     emitter.onNext(oldEpisodes);
 
                     // ...then fetch new episodes
@@ -217,8 +224,11 @@ public class EpisodeListFragment extends Fragment {
 
                     // ...and show refreshed data
                     Episode[][] newEpisodes = new Episode[2][];
-                    newEpisodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    newEpisodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    newEpisodes[ALL_INDEX] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    newEpisodes[NEW_INDEX] = Stream.of(newEpisodes[ALL_INDEX])
+                            .filter(episode -> Episode.EpisodeStatus.NEW.equals(episode.getStatus()) || Episode.EpisodeStatus.LISTENING.equals(episode.getStatus()))
+                            .toArray(Episode[]::new);
+
                     emitter.onNext(newEpisodes);
 
                     emitter.onComplete();
@@ -226,8 +236,8 @@ public class EpisodeListFragment extends Fragment {
 
                 compositeDisposable.add(
                         Observable.combineLatest(podcastObservable, episodesObservable, (podcast, episodes) -> new RecyclerViewAdapter[] {
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[0]),
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[1])
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[ALL_INDEX]),
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[NEW_INDEX])
                         })
                         .materialize() // We want to get all the emitted data before onError
                         .subscribeOn(Schedulers.io())
@@ -235,8 +245,8 @@ public class EpisodeListFragment extends Fragment {
                         .subscribe(notification -> {
                             if (notification.isOnNext()) {
                                 RecyclerViewAdapter[] adapters = notification.getValue();
-                                views[NEW_EPISODES_PAGE].setAdapter(adapters[0]);
-                                views[ALL_EPISODES_PAGE].setAdapter(adapters[1]);
+                                views[ALL_EPISODES_PAGE].setAdapter(adapters[ALL_INDEX]);
+                                views[NEW_EPISODES_PAGE].setAdapter(adapters[NEW_INDEX]);
                             }
                             else if (notification.isOnError()) {
                                 Snackbar.make(views[NEW_EPISODES_PAGE], R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
@@ -263,14 +273,16 @@ public class EpisodeListFragment extends Fragment {
                             .observeOn(Schedulers.io())
                             .map((podcastCode) -> {
                                 Episode[][] episodes = new Episode[2][];
-                                episodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                                episodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                                episodes[ALL_INDEX] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                                episodes[NEW_INDEX] = Stream.of(episodes[ALL_INDEX])
+                                        .filter(episode -> Episode.EpisodeStatus.NEW.equals(episode.getStatus()) || Episode.EpisodeStatus.LISTENING.equals(episode.getStatus()))
+                                        .toArray(Episode[]::new);
                                 return episodes;
                             })
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe((episodes) -> {
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[0]);
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[1]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[ALL_INDEX]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[NEW_INDEX]);
                             }));
         }
 

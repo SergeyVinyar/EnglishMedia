@@ -43,7 +43,6 @@ public final class Episode {
             ")";
 
     private static final String SQL_SELECT_ALL_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ? order by %s desc", TABLE_NAME, PODCAST_CODE, PUB_DATE);
-    private static final String SQL_SELECT_NEW_BY_PODCAST_CODE = String.format("select ROWID as _id, * from %s where %s = ? and %s in ('%s', '%s') order by %s desc", TABLE_NAME, PODCAST_CODE, STATUS, EpisodeStatus.NEW.toString(), EpisodeStatus.LISTENING.toString(), PUB_DATE);
     private static final String SQL_EXISTS_BY_PODCAST_CODE_AND_GUID = String.format("select exists(select 1 from %s where %s = ? and %s = ?)", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
     private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?", TABLE_NAME, CODE);
 
@@ -85,12 +84,6 @@ public final class Episode {
         this.setPubDate(new Date(cursor.getLong(cursor.getColumnIndex(PUB_DATE))));
         this.setStatus(EpisodeStatus.valueOf(cursor.getString(cursor.getColumnIndex(STATUS))));
         this.setCurrentPosition(Integer.parseInt(cursor.getString(cursor.getColumnIndex(CURRENT_POSITION))));
-    }
-
-    public static Episode[] readNewByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
-        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_NEW_BY_PODCAST_CODE, new String[] { podcastCode.toString() })) {
-            return cursorToArray(cursor);
-        }
     }
 
     public static Episode[] readAllByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
