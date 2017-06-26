@@ -12,6 +12,7 @@ import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
 
 public final class Episode {
 
+    public static final String ID = "_id";
     public static final String CODE = "code";
     public static final String PODCAST_CODE = "podcast_code";
     public static final String EPISODE_GUID = "episode_guid";
@@ -46,6 +47,7 @@ public final class Episode {
     private static final String SQL_EXISTS_BY_PODCAST_CODE_AND_GUID = String.format("select exists(select 1 from %s where %s = ? and %s = ?)", TABLE_NAME, PODCAST_CODE, EPISODE_GUID);
     private static final String SQL_SELECT_BY_CODE = String.format("select ROWID as _id, * from %s where %s = ?", TABLE_NAME, CODE);
 
+    private long dbId;
     private UUID code;
     private UUID podcastCode;
     private String episodeGuid;
@@ -69,8 +71,9 @@ public final class Episode {
     /**
      * Instantiate existed item (from current cursor position)
      */
-    public Episode(Cursor cursor) {
+    private Episode(Cursor cursor) {
         this();
+        this.dbId = Long.parseLong(cursor.getString(cursor.getColumnIndex(ID)));
         this.code = UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE)));
         this.setPodcastCode(UUID.fromString(cursor.getString(cursor.getColumnIndex(PODCAST_CODE))));
         this.setEpisodeGuid(cursor.getString(cursor.getColumnIndex(EPISODE_GUID)));
@@ -84,12 +87,24 @@ public final class Episode {
         this.setCurrentPosition(Integer.parseInt(cursor.getString(cursor.getColumnIndex(CURRENT_POSITION))));
     }
 
-    public static Cursor readNewByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
-        return dbHelper.getDatabase().rawQuery(SQL_SELECT_NEW_BY_PODCAST_CODE, new String[] { podcastCode.toString() });
+    public static Episode[] readNewByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
+        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_NEW_BY_PODCAST_CODE, new String[] { podcastCode.toString() })) {
+            return cursorToArray(cursor);
+        }
     }
 
-    public static Cursor readAllByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
-        return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL_BY_PODCAST_CODE, new String[] { podcastCode.toString() });
+    public static Episode[] readAllByPodcastCode(DbHelper dbHelper, UUID podcastCode) {
+        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL_BY_PODCAST_CODE, new String[] { podcastCode.toString() })) {
+            return cursorToArray(cursor);
+        }
+    }
+
+    private static Episode[] cursorToArray(Cursor cursor) {
+        Episode[] result = new Episode[cursor.getCount()];
+        int index = 0;
+        while(cursor.moveToNext())
+            result[index++] = new Episode(cursor);
+        return result;
     }
 
     public static Episode read(DbHelper dbHelper, UUID code) {
@@ -158,6 +173,11 @@ public final class Episode {
 
     static void onCreate(SQLiteDatabase db) {
         db.execSQL(SQL_CREATE_TABLE);
+    }
+
+    /** ROWID from SQLite */
+    public long getDbId() {
+        return dbId;
     }
 
     public UUID getCode() {

@@ -193,12 +193,12 @@ public class EpisodeListFragment extends Fragment {
                 Observable<Podcast> podcastObservable = Observable.just(podcastCode)
                         .map((code) -> Podcast.read(EpisodeListFragment.this.dbHelper, code));
 
-                Observable<Cursor[]> episodesObservable = Observable.create(emitter -> {
+                Observable<Episode[][]> episodesObservable = Observable.create(emitter -> {
                     // First of all show to the user episodes from Db...
-                    Cursor[] oldCursors = new Cursor[2];
-                    oldCursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    oldCursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    emitter.onNext(oldCursors);
+                    Episode[][] oldEpisodes = new Episode[2][];
+                    oldEpisodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    oldEpisodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    emitter.onNext(oldEpisodes);
 
                     // ...then fetch new episodes
                     try {
@@ -216,18 +216,18 @@ public class EpisodeListFragment extends Fragment {
                     }
 
                     // ...and show refreshed data
-                    Cursor[] newCursors = new Cursor[2];
-                    newCursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    newCursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                    emitter.onNext(newCursors);
+                    Episode[][] newEpisodes = new Episode[2][];
+                    newEpisodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    newEpisodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                    emitter.onNext(newEpisodes);
 
                     emitter.onComplete();
                 });
 
                 compositeDisposable.add(
-                        Observable.combineLatest(podcastObservable, episodesObservable, (podcast, cursors) -> new RecyclerViewAdapter[] {
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[0]),
-                                new EpisodeListFragment.RecyclerViewAdapter(podcast, cursors[1])
+                        Observable.combineLatest(podcastObservable, episodesObservable, (podcast, episodes) -> new RecyclerViewAdapter[] {
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[0]),
+                                new EpisodeListFragment.RecyclerViewAdapter(podcast, episodes[1])
                         })
                         .materialize() // We want to get all the emitted data before onError
                         .subscribeOn(Schedulers.io())
@@ -262,15 +262,15 @@ public class EpisodeListFragment extends Fragment {
                     Observable.just(UUID.fromString(getArguments().getString(PODCAST_CODE_ARG)))
                             .observeOn(Schedulers.io())
                             .map((podcastCode) -> {
-                                Cursor[] cursors = new Cursor[2];
-                                cursors[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                                cursors[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
-                                return cursors;
+                                Episode[][] episodes = new Episode[2][];
+                                episodes[0] = Episode.readNewByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                                episodes[1] = Episode.readAllByPodcastCode(EpisodeListFragment.this.dbHelper, podcastCode);
+                                return episodes;
                             })
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe((cursors) -> {
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[0]);
-                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(cursors[1]);
+                            .subscribe((episodes) -> {
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[NEW_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[0]);
+                                ((EpisodeListFragment.RecyclerViewAdapter) views[ALL_EPISODES_PAGE].getAdapter()).swapEpisodesCursor(episodes[1]);
                             }));
         }
 
@@ -314,17 +314,17 @@ public class EpisodeListFragment extends Fragment {
         private final static int EPISODE_VIEWTYPE = 1;
 
         private Podcast podcast;
-        private Cursor episodesCursor;
+        private Episode[] episodes;
         private Set<Integer> expandedPositions = new ArraySet<>();
 
-        private Cursor getEpisodesCursor() {
-            return episodesCursor;
+        private Episode[] getEpisodes() {
+            return episodes;
         };
 
-        RecyclerViewAdapter(Podcast podcast, Cursor episodesCursor) {
+        RecyclerViewAdapter(Podcast podcast, Episode[] episodes) {
             this.podcast = podcast;
-            this.episodesCursor = episodesCursor;
-            this.expandedPositions = new ArraySet<>(episodesCursor.getCount());
+            this.episodes = episodes;
+            this.expandedPositions = new ArraySet<>(episodes.length);
             this.setHasStableIds(true);
         }
 
@@ -341,7 +341,7 @@ public class EpisodeListFragment extends Fragment {
             }
             else { // EPISODE_VIEWTYPE
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_episode, parent, false);
-                return new EpisodeViewHolder(v, this::getEpisodesCursor, this);
+                return new EpisodeViewHolder(v, this::getEpisodes, this);
             }
         }
 
@@ -404,12 +404,10 @@ public class EpisodeListFragment extends Fragment {
 
                 position--; // Because podcast header is always at position 0
 
-                episodesCursor.move(position - episodesCursor.getPosition());
-
-                Episode episode = new Episode(episodesCursor);
+                Episode episode = episodes[position];
 
                 // No separator at the first item
-                if (episodesCursor.getPosition() != 0)
+                if (position != 0)
                     episodeViewHolder.separatorView.setVisibility(View.VISIBLE);
                 else
                     episodeViewHolder.separatorView.setVisibility(View.GONE);
@@ -454,7 +452,7 @@ public class EpisodeListFragment extends Fragment {
                     episodeViewHolder.descriptionView.setText("");
                 }
 
-                if (expandedPositions.contains(episodesCursor.getPosition())) {
+                if (expandedPositions.contains(position)) {
                     episodeViewHolder.descriptionView.setMaxLines(50);
                     episodeViewHolder.moreView.setVisibility(View.GONE);
                 }
@@ -464,10 +462,11 @@ public class EpisodeListFragment extends Fragment {
                 }
 
                 // Hiding "more..." if a description fits to one line
+                final int finalPosition = position;
                 episodeViewHolder.descriptionView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                     @Override
                     public boolean onPreDraw() {
-                        boolean notExpanded = !expandedPositions.contains(episodesCursor.getPosition());
+                        boolean notExpanded = !expandedPositions.contains(finalPosition);
                         boolean noEllipsis = episodeViewHolder.descriptionView.getLayout().getEllipsisCount(0) == 0;
                         if (notExpanded && noEllipsis)
                             episodeViewHolder.moreView.setVisibility(View.GONE);
@@ -478,7 +477,7 @@ public class EpisodeListFragment extends Fragment {
 
                 // Add empty space at the bottom to the last item otherwise this item hides behind
                 // player control view
-                if (episodesCursor.getPosition() == episodesCursor.getCount() - 1)
+                if (position == episodes.length - 1)
                     episodeViewHolder.bottomSpaceView.setVisibility(View.VISIBLE);
                 else
                     episodeViewHolder.bottomSpaceView.setVisibility(View.GONE);
@@ -487,7 +486,7 @@ public class EpisodeListFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return episodesCursor.getCount() + 1; // + podcast header at position 0
+            return episodes.length + 1; // + podcast header at position 0
         }
 
         @Override
@@ -497,14 +496,12 @@ public class EpisodeListFragment extends Fragment {
             }
             else {
                 position--;
-                episodesCursor.move(position - episodesCursor.getPosition());
-                // sqlite rowid always starts from 1 => no conflicts with a podcast header
-                return episodesCursor.getLong(episodesCursor.getColumnIndex("_id"));
+                return episodes[position].getDbId();
             }
         }
 
-        void swapEpisodesCursor(Cursor cursor) {
-            this.episodesCursor = cursor;
+        void swapEpisodesCursor(Episode[] episodes) {
+            this.episodes = episodes;
             this.notifyDataSetChanged();
         }
     }
@@ -521,7 +518,7 @@ public class EpisodeListFragment extends Fragment {
         private TextView moreView;
         private Space bottomSpaceView;
 
-        EpisodeViewHolder(View itemView, Supplier<Cursor> getEpisodesCursor, RecyclerViewAdapter adapter) {
+        EpisodeViewHolder(View itemView, Supplier<Episode[]> getEpisodes, RecyclerViewAdapter adapter) {
             super(itemView);
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
@@ -545,10 +542,8 @@ public class EpisodeListFragment extends Fragment {
 
             constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
-                    Cursor cursor = getEpisodesCursor.get();
-                    cursor.moveToPosition(getAdapterPosition() - 1);
-                    UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Episode.CODE)));
-                    mListener.onPlayPauseEpisode(code);
+                    Episode episode = getEpisodes.get()[getAdapterPosition() - 1];
+                    mListener.onPlayPauseEpisode(episode.getCode());
                 }
             });
 
