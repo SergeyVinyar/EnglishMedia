@@ -57,7 +57,7 @@ public final class Podcast {
     /**
      * Instantiate existed item (from current cursor position)
      */
-    public Podcast(Cursor cursor) {
+    private Podcast(Cursor cursor) {
         this();
         this.code = UUID.fromString(cursor.getString(cursor.getColumnIndex(CODE)));
         this.setCountry(Country.valueOf(cursor.getString(cursor.getColumnIndex(COUNTRY))));
@@ -93,15 +93,27 @@ public final class Podcast {
     /**
      * Returns all items
      */
-    public static Cursor readAll(DbHelper dbHelper) {
-        return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null);
+    public static Podcast[] readAll(DbHelper dbHelper) {
+        try(Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL, null)) {
+            return cursorToArray(cursor);
+        }
     }
 
     /**
      * Returns items with appropriate podcastLevel
      */
-    public static Cursor readAllByPodcastLevel(DbHelper dbHelper, PodcastLevel podcastLevel) {
-        return dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL_BY_PODCAST_LEVEL, new String[] { podcastLevel.name() });
+    public static Podcast[] readAllByPodcastLevel(DbHelper dbHelper, PodcastLevel podcastLevel) {
+        try (Cursor cursor = dbHelper.getDatabase().rawQuery(SQL_SELECT_ALL_BY_PODCAST_LEVEL, new String[] { podcastLevel.name() })) {
+            return cursorToArray(cursor);
+        }
+    }
+
+    private static Podcast[] cursorToArray(Cursor cursor) {
+        Podcast[] result = new Podcast[cursor.getCount()];
+        int index = 0;
+        while(cursor.moveToNext())
+            result[index++] = new Podcast(cursor);
+        return result;
     }
 
     public UUID write(DbHelper dbHelper) {

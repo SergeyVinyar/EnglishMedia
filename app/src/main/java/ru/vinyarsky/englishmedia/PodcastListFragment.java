@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Space;
 
+import com.annimon.stream.function.Supplier;
 import com.google.firebase.crash.FirebaseCrash;
 
 import java.io.IOException;
@@ -96,23 +97,23 @@ public class PodcastListFragment extends Fragment {
         mListener.showProgress();
         try {
             compositeDisposable.add(
-                    Observable.<Cursor>create((emitter) -> {
-                        Cursor cursor = null;
+                    Observable.<Podcast[]>create((emitter) -> {
+                        Podcast[] podcasts;
 
                         String podcastLevelName = getArguments().getString(PODCAST_LEVEL_ARG);
                         if (PODCAST_LEVEL_ARG_ALL_VALUE.equals(podcastLevelName))
-                            cursor = Podcast.readAll(PodcastListFragment.this.dbHelper);
+                            podcasts = Podcast.readAll(PodcastListFragment.this.dbHelper);
                         else
-                            cursor = Podcast.readAllByPodcastLevel(PodcastListFragment.this.dbHelper, Podcast.PodcastLevel.valueOf(podcastLevelName));
+                            podcasts = Podcast.readAllByPodcastLevel(PodcastListFragment.this.dbHelper, Podcast.PodcastLevel.valueOf(podcastLevelName));
 
-                        emitter.onNext(cursor);
+                        emitter.onNext(podcasts);
                         emitter.onComplete();
                     })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe((cursor) -> {
+                    .subscribe((podcastList) -> {
                         RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_podcastlist);
-                        recyclerView.setAdapter(new RecyclerViewAdapter(cursor));
+                        recyclerView.setAdapter(new RecyclerViewAdapter(podcastList));
                         mListener.hideProgress();
                     }));
         } catch (Throwable e) {
@@ -154,33 +155,32 @@ public class PodcastListFragment extends Fragment {
 
     public class RecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
-        private Cursor cursor;
+        private Podcast[] podcasts;
         private Set<Integer> expandedPositions = new ArraySet<>();
         private LruCache<String, Bitmap> imageCache = new LruCache<>(30);
 
-        public RecyclerViewAdapter(Cursor cursor) {
-            this.cursor = cursor;
-            this.expandedPositions = new ArraySet<>(cursor.getCount());
+        public RecyclerViewAdapter(Podcast[] podcasts) {
+            this.podcasts = podcasts;
+            this.expandedPositions = new ArraySet<>(podcasts.length);
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_podcast, parent, false);
-            return new ViewHolder(v, cursor, this);
+            return new ViewHolder(v, () -> podcasts, this);
         }
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            cursor.move(position - cursor.getPosition());
-
             // No separator at the first item
-            if (cursor.getPosition() != 0)
+            if (position != 0)
                 holder.separatorView.setVisibility(View.VISIBLE);
             else
                 holder.separatorView.setVisibility(View.GONE);
 
-            Podcast.Country country = Podcast.Country.valueOf(cursor.getString(cursor.getColumnIndex(Podcast.COUNTRY)));
-            switch (country) {
+            Podcast podcast = podcasts[position];
+
+            switch (podcast.getCountry()) {
                 case UK:
                     holder.flagView.setVisibility(View.VISIBLE);
                     holder.flagView.setImageResource(R.drawable.flag_uk);
@@ -202,14 +202,13 @@ public class PodcastListFragment extends Fragment {
                     break;
             }
 
-            if (cursor.getInt(cursor.getColumnIndex(Podcast.SUBSCRIBED)) != 0)
+            if (podcast.isSubscribed())
                 holder.subscribedView.setVisibility(View.VISIBLE);
             else
                 holder.subscribedView.setVisibility(View.INVISIBLE);
 
-            Podcast.PodcastLevel level = Podcast.PodcastLevel.valueOf(cursor.getString(cursor.getColumnIndex(Podcast.LEVEL)));
-            holder.levelView.setText(level.toString());
-            switch (level) {
+            holder.levelView.setText(podcast.getLevel().toString());
+            switch (podcast.getLevel()) {
                 case BEGINNER:
                     holder.levelView.setTextColor(getResources().getColor(R.color.beginner));
                     break;
@@ -221,11 +220,11 @@ public class PodcastListFragment extends Fragment {
                     break;
             }
 
-            holder.titleView.setText(cursor.getString(cursor.getColumnIndex(Podcast.TITLE)));
-            holder.descriptionView.setText(Html.fromHtml(cursor.getString(cursor.getColumnIndex(Podcast.DESCRIPTION))));
+            holder.titleView.setText(podcast.getTitle());
+            holder.descriptionView.setText(Html.fromHtml(podcast.getDescription()));
             holder.descriptionView.setLinkTextColor(holder.descriptionView.getCurrentTextColor());
 
-            if (expandedPositions.contains(cursor.getPosition())) {
+            if (expandedPositions.contains(position)) {
                 holder.descriptionView.setMaxLines(50);
                 holder.moreView.setVisibility(View.GONE);
             }
@@ -238,7 +237,7 @@ public class PodcastListFragment extends Fragment {
             holder.descriptionView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
-                    boolean notExpanded = !expandedPositions.contains(cursor.getPosition());
+                    boolean notExpanded = !expandedPositions.contains(position);
                     boolean noEllipsis = holder.descriptionView.getLayout().getEllipsisCount(0) == 0;
                     if (notExpanded && noEllipsis)
                         holder.moreView.setVisibility(View.GONE);
@@ -247,7 +246,7 @@ public class PodcastListFragment extends Fragment {
                 }
             });
 
-            String uriAsString = cursor.getString(cursor.getColumnIndex(Podcast.IMAGE_PATH));
+            String uriAsString = podcast.getImagePath();
             try {
                 Bitmap bitmap = imageCache.get(uriAsString);
                 if (bitmap == null) {
@@ -263,7 +262,7 @@ public class PodcastListFragment extends Fragment {
 
             // Add empty space at the bottom to the last item otherwise item hides behind
             // player control view.
-            if (cursor.getPosition() == cursor.getCount() - 1)
+            if (position == podcasts.length - 1)
                 holder.bottomSpaceView.setVisibility(View.VISIBLE);
             else
                 holder.bottomSpaceView.setVisibility(View.GONE);
@@ -271,13 +270,11 @@ public class PodcastListFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return cursor.getCount();
+            return podcasts.length;
         }
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-
-        private Cursor cursor;
 
         private ImageView separatorView;
         private ConstraintLayout constraintView;
@@ -290,10 +287,8 @@ public class PodcastListFragment extends Fragment {
         private ImageView podcastImageView;
         private Space bottomSpaceView;
 
-        ViewHolder(View itemView, Cursor cursor, RecyclerViewAdapter adapter) {
+        ViewHolder(View itemView, final Supplier<Podcast[]> getPodcasts, RecyclerViewAdapter adapter) {
             super(itemView);
-
-            this.cursor = cursor;
 
             separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_separator));
             constraintView = ((ConstraintLayout) itemView.findViewById(R.id.constraintlayout_item_podcast));
@@ -317,9 +312,8 @@ public class PodcastListFragment extends Fragment {
 
             constraintView.setOnClickListener((view) -> {
                 if (mListener != null) {
-                    cursor.moveToPosition(getAdapterPosition());
-                    UUID code = UUID.fromString(cursor.getString(cursor.getColumnIndex(Podcast.CODE)));
-                    mListener.onSelectPodcast(code);
+                    Podcast podcast = getPodcasts.get()[getAdapterPosition()];
+                    mListener.onSelectPodcast(podcast.getCode());
                 }
             });
 
