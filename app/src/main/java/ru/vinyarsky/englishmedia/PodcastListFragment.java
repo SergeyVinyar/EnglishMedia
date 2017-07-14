@@ -1,11 +1,10 @@
 package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.net.Uri;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
@@ -14,7 +13,6 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,9 +22,8 @@ import android.widget.TextView;
 import android.widget.Space;
 
 import com.annimon.stream.function.Supplier;
-import com.google.firebase.crash.FirebaseCrash;
+import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -157,7 +154,8 @@ public class PodcastListFragment extends Fragment {
 
         private Podcast[] podcasts;
         private Set<Integer> expandedPositions = new ArraySet<>();
-        private LruCache<String, Bitmap> imageCache = new LruCache<>(30);
+
+        private final Drawable EMPTY_DRAWABLE = new ColorDrawable(Color.TRANSPARENT);
 
         public RecyclerViewAdapter(Podcast[] podcasts) {
             this.podcasts = podcasts;
@@ -246,19 +244,11 @@ public class PodcastListFragment extends Fragment {
                 }
             });
 
-            String uriAsString = podcast.getImagePath();
-            try {
-                Bitmap bitmap = imageCache.get(uriAsString);
-                if (bitmap == null) {
-                    bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), Uri.parse(uriAsString));
-                    imageCache.put(uriAsString, bitmap);
-                }
-                holder.podcastImageView.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                // OK, no image then...
-                FirebaseCrash.log(uriAsString);
-                FirebaseCrash.report(e);
-            }
+            Picasso.with(getContext())
+                    .load(podcast.getImagePath())
+                    .placeholder(EMPTY_DRAWABLE)
+                    .error(EMPTY_DRAWABLE)
+                    .into(holder.podcastImageView);
 
             // Add empty space at the bottom to the last item otherwise item hides behind
             // player control view.
