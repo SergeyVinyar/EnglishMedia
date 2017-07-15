@@ -24,6 +24,8 @@ import com.squareup.picasso.Picasso;
 import java.util.Set;
 import java.util.UUID;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -42,6 +44,9 @@ public class PodcastListFragment extends Fragment {
     private OnPodcastListFragmentListener mListener;
 
     private CompositeDisposable compositeDisposable;
+
+    @BindView(R.id.recyclerview_fragment_podcastlist)
+    RecyclerView recyclerView;
 
     public PodcastListFragment() {
         this.dbHelper = EMApplication.getEmComponent().getDbHelper();
@@ -77,8 +82,8 @@ public class PodcastListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_podcastlist, container, false);
+        ButterKnife.bind(this, view);
 
-        RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_podcastlist);
         recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
@@ -106,7 +111,6 @@ public class PodcastListFragment extends Fragment {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe((podcastList) -> {
-                        RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerview_fragment_podcastlist);
                         recyclerView.setAdapter(new RecyclerViewAdapter(podcastList));
                         mListener.hideProgress();
                     }));
@@ -267,30 +271,20 @@ public class PodcastListFragment extends Fragment {
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView separatorView;
-        private ConstraintLayout constraintView;
-        private ImageView flagView;
-        private View subscribedView;
-        private TextView levelView;
-        private TextView titleView;
-        private TextView descriptionView;
-        private TextView moreView;
-        private ImageView podcastImageView;
-        private Space bottomSpaceView;
+        @BindView(R.id.imageview_item_podcast_separator) ImageView separatorView;
+        @BindView(R.id.constraintlayout_item_podcast) ConstraintLayout constraintView;
+        @BindView(R.id.imageView_item_podcast_flag) ImageView flagView;
+        @BindView(R.id.textview_item_podcast_subscribed) TextView subscribedView;
+        @BindView(R.id.textview_item_podcast_level) TextView levelView;
+        @BindView(R.id.textview_item_podcast_title) TextView titleView;
+        @BindView(R.id.textview_item_podcast_description) TextView descriptionView;
+        @BindView(R.id.textview_item_podcast_more) TextView moreView;
+        @BindView(R.id.imageview_item_podcast) ImageView podcastImageView;
+        @BindView(R.id.imageview_item_podcast_bottomspace) Space bottomSpaceView;
 
         ViewHolder(View itemView, final Supplier<Podcast[]> getPodcasts, RecyclerViewAdapter adapter) {
             super(itemView);
-
-            separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_separator));
-            constraintView = ((ConstraintLayout) itemView.findViewById(R.id.constraintlayout_item_podcast));
-            flagView = ((ImageView)itemView.findViewById(R.id.imageView_item_podcast_flag));
-            subscribedView = itemView.findViewById(R.id.textview_item_podcast_subscribed);
-            levelView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_level));
-            titleView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_title));
-            descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_description));
-            moreView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_more));
-            podcastImageView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast));
-            bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_podcast_bottomspace));
+            ButterKnife.bind(this, itemView);
 
             View.OnClickListener expandListener = (v) -> {
                 Integer position = getAdapterPosition();

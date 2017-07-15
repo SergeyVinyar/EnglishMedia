@@ -7,6 +7,8 @@ import android.widget.TextView;
 
 import com.google.android.exoplayer2.ui.PlaybackControlView;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import ru.vinyarsky.englishmedia.media.MediaService;
 
 /**
@@ -33,8 +35,11 @@ public class EMPlaybackControlView extends PlaybackControlView {
         }
     };
 
-    private TextView podcastTitleView;
-    private TextView episodeTitleView;
+    @BindView(R.id.textView_exo_playback_control_podcast_title)
+    TextView podcastTitleView;
+
+    @BindView(R.id.textView_exo_playback_control_episode_title)
+    TextView episodeTitleView;
 
     public EMPlaybackControlView(Context context) {
         this(context, null);
@@ -46,8 +51,7 @@ public class EMPlaybackControlView extends PlaybackControlView {
 
     public EMPlaybackControlView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        this.podcastTitleView = (TextView) findViewById(R.id.textView_exo_playback_control_podcast_title);
-        this.episodeTitleView = (TextView) findViewById(R.id.textView_exo_playback_control_episode_title);
+        ButterKnife.bind(this, this);
         setShowTimeoutMs(-1);
     }
 
