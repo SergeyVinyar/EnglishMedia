@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 
 import com.annimon.stream.Stream;
 import com.annimon.stream.function.Supplier;
+import com.squareup.picasso.Picasso;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -384,20 +385,28 @@ public class EpisodeListFragment extends Fragment {
 
                 switch (podcast.getCountry()) {
                     case UK:
+                        Picasso.with(getContext())
+                                .load(R.drawable.flag_uk)
+                                .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
-                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_uk);
                         break;
                     case US:
+                        Picasso.with(getContext())
+                                .load(R.drawable.flag_us)
+                                .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
-                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_us);
                         break;
                     case CZ:
+                        Picasso.with(getContext())
+                                .load(R.drawable.flag_cz)
+                                .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
-                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_cz);
                         break;
                     case DK:
+                        Picasso.with(getContext())
+                                .load(R.drawable.flag_dk)
+                                .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
-                        podcastHeaderViewHolder.flagView.setImageResource(R.drawable.flag_dk);
                         break;
                     default:
                         podcastHeaderViewHolder.flagView.setVisibility(View.INVISIBLE);
@@ -446,11 +455,15 @@ public class EpisodeListFragment extends Fragment {
 
                 switch (episode.getStatus()) {
                     case NEW:
-                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_new);
+                        Picasso.with(getContext())
+                                .load(R.drawable.episode_status_new)
+                                .into(episodeViewHolder.statusView);
                         episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case LISTENING:
-                        episodeViewHolder.statusView.setImageResource(R.drawable.episode_status_listening);
+                        Picasso.with(getContext())
+                                .load(R.drawable.episode_status_listening)
+                                .into(episodeViewHolder.statusView);
                         episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case COMPLETED:

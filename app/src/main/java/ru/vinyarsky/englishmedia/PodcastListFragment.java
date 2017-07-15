@@ -1,9 +1,6 @@
 package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -155,8 +152,6 @@ public class PodcastListFragment extends Fragment {
         private Podcast[] podcasts;
         private Set<Integer> expandedPositions = new ArraySet<>();
 
-        private final Drawable EMPTY_DRAWABLE = new ColorDrawable(Color.TRANSPARENT);
-
         public RecyclerViewAdapter(Podcast[] podcasts) {
             this.podcasts = podcasts;
             this.expandedPositions = new ArraySet<>(podcasts.length);
@@ -180,20 +175,28 @@ public class PodcastListFragment extends Fragment {
 
             switch (podcast.getCountry()) {
                 case UK:
+                    Picasso.with(getContext())
+                            .load(R.drawable.flag_uk)
+                            .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
-                    holder.flagView.setImageResource(R.drawable.flag_uk);
                     break;
                 case US:
+                    Picasso.with(getContext())
+                            .load(R.drawable.flag_us)
+                            .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
-                    holder.flagView.setImageResource(R.drawable.flag_us);
                     break;
                 case CZ:
+                    Picasso.with(getContext())
+                            .load(R.drawable.flag_cz)
+                            .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
-                    holder.flagView.setImageResource(R.drawable.flag_cz);
                     break;
                 case DK:
+                    Picasso.with(getContext())
+                            .load(R.drawable.flag_dk)
+                            .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
-                    holder.flagView.setImageResource(R.drawable.flag_dk);
                     break;
                 default:
                     holder.flagView.setVisibility(View.INVISIBLE);
@@ -246,8 +249,6 @@ public class PodcastListFragment extends Fragment {
 
             Picasso.with(getContext())
                     .load(podcast.getImagePath())
-                    .placeholder(EMPTY_DRAWABLE)
-                    .error(EMPTY_DRAWABLE)
                     .into(holder.podcastImageView);
 
             // Add empty space at the bottom to the last item otherwise item hides behind
