@@ -32,6 +32,8 @@ import com.google.firebase.crash.FirebaseCrash;
 
 import java.util.UUID;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import ru.vinyarsky.englishmedia.db.Podcast;
 import ru.vinyarsky.englishmedia.media.MediaService;
 
@@ -45,20 +47,34 @@ public class MainActivity extends AppCompatActivity
 
     private static final String PODCASTLEVEL_PREFERENCE_ALL_VALUE = "all";
 
+    @BindView(R.id.playbackcontrolview_layout_main_appbar)
+    EMPlaybackControlView controlView;
+
+    @BindView(R.id.activity_main)
+    DrawerLayout mainActivity;
+
+    @BindView(R.id.toolbar_layout_main_appbar)
+    Toolbar toolbar;
+
+    @BindView(R.id.navview_main)
+    NavigationView navigationView;
+
+    @BindView(R.id.appbarlayout_layout_main_appbar)
+    AppBarLayout appBarLayout;
+
+    @BindView(R.id.progressbar_layout_main_appbar)
+    ProgressBar progressBar;
+
     private ServiceConnection mediaServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MainActivity.this.mediaServiceBinder = (MediaService.MediaServiceBinder) service;
-
-            EMPlaybackControlView controlView = (EMPlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
             MainActivity.this.mediaServiceBinder.mountPlaybackControlView(controlView);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            EMPlaybackControlView controlView = (EMPlaybackControlView) findViewById(R.id.playbackcontrolview_layout_main_appbar);
             MainActivity.this.mediaServiceBinder.unMountPlaybackControlView(controlView);
-
             MainActivity.this.mediaServiceBinder = null;
         }
     };
@@ -67,14 +83,14 @@ public class MainActivity extends AppCompatActivity
     private BroadcastReceiver noNetworkReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Snackbar.make(findViewById(R.id.activity_main), R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(MainActivity.this.mainActivity, R.string.all_no_network, Snackbar.LENGTH_SHORT).show();
         }
     };
 
     private BroadcastReceiver contentNotFoundReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Snackbar.make(findViewById(R.id.activity_main), R.string.main_activity_content_not_found, Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(MainActivity.this.mainActivity, R.string.main_activity_content_not_found, Snackbar.LENGTH_SHORT).show();
             Uri url = intent.getParcelableExtra(MediaService.EPISODE_URL_EXTRA);
             FirebaseCrash.report(new Exception(String.format("Content not found (url: %s)", url != null ? url.toString() : "null")));
         }
@@ -84,16 +100,14 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_layout_main_appbar);
+        ButterKnife.bind(this);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.main_navigation_drawer_open, R.string.main_navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
+                this, mainActivity, toolbar, R.string.main_navigation_drawer_open, R.string.main_navigation_drawer_close);
+        mainActivity.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         navigationView.setNavigationItemSelectedListener(this);
 
         LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
@@ -107,7 +121,6 @@ public class MainActivity extends AppCompatActivity
 
         // if we create an initial fragment inside onCreate we wrongly get default toolbar title instead of our's
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.navview_main);
         String podcastLevelName = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE).getString(PODCASTLEVEL_PREFERENCE, PODCASTLEVEL_PREFERENCE_ALL_VALUE);
 
         Fragment existedFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout_layout_main_appbar_fragment);
@@ -155,9 +168,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (mainActivity.isDrawerOpen(GravityCompat.START)) {
+            mainActivity.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
         }
@@ -189,8 +201,7 @@ public class MainActivity extends AppCompatActivity
                 .putString(PODCASTLEVEL_PREFERENCE, podcastLevel != null ? podcastLevel.name() : PODCASTLEVEL_PREFERENCE_ALL_VALUE)
                 .apply();
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
-        drawer.closeDrawer(GravityCompat.START);
+        mainActivity.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -207,31 +218,31 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void addTabLayout(TabLayout view) {
-        ((AppBarLayout) findViewById(R.id.appbarlayout_layout_main_appbar)).addView(view);
+        appBarLayout.addView(view);
     }
 
     @Override
     public void removeTabLayout(TabLayout view) {
-        ((AppBarLayout) findViewById(R.id.appbarlayout_layout_main_appbar)).removeView(view);
+        appBarLayout.removeView(view);
     }
 
     @Override
     public void setTitle(String title) {
-        ((Toolbar) findViewById(R.id.toolbar_layout_main_appbar)).setTitle(getResources().getString(R.string.all_app_name) + " - " + title);
+        toolbar.setTitle(getResources().getString(R.string.all_app_name) + " - " + title);
     }
 
     private void setDefaultTitle() {
-        ((Toolbar) findViewById(R.id.toolbar_layout_main_appbar)).setTitle(getResources().getString(R.string.all_app_name));
+        toolbar.setTitle(getResources().getString(R.string.all_app_name));
     }
 
     @Override
     public void showProgress() {
-        ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideProgress() {
-        ((ProgressBar) findViewById(R.id.progressbar_layout_main_appbar)).setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
     }
 
     /**
