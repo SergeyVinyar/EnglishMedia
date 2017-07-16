@@ -43,6 +43,8 @@ import com.annimon.stream.Stream;
 import com.annimon.stream.function.Supplier;
 import com.squareup.picasso.Picasso;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -551,30 +553,21 @@ public class EpisodeListFragment extends Fragment {
         }
     }
 
-    private class EpisodeViewHolder extends RecyclerView.ViewHolder {
+    class EpisodeViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView separatorView;
-        private ConstraintLayout constraintView;
-        private ImageView statusView;
-        private TextView titleView;
-        private TextView pubDateView;
-        private TextView durationView;
-        private TextView descriptionView;
-        private TextView moreView;
-        private Space bottomSpaceView;
+        @BindView(R.id.imageview_item_episode_separator) ImageView separatorView;
+        @BindView(R.id.constraintlayout_item_episode) ConstraintLayout constraintView;
+        @BindView(R.id.imageView_item_episode_status) ImageView statusView;
+        @BindView(R.id.textview_item_episode_title) TextView titleView;
+        @BindView(R.id.textview_item_episode_description) TextView pubDateView;
+        @BindView(R.id.textview_item_episode_pubdate) TextView durationView;
+        @BindView(R.id.textview_item_episode_duration) TextView descriptionView;
+        @BindView(R.id.textview_item_episode_more) TextView moreView;
+        @BindView(R.id.imageview_item_episode_bottomspace) Space bottomSpaceView;
 
         EpisodeViewHolder(View itemView, Supplier<Episode[]> getEpisodes, RecyclerViewAdapter adapter) {
             super(itemView);
-
-            separatorView = ((ImageView)itemView.findViewById(R.id.imageview_item_episode_separator));
-            constraintView = ((ConstraintLayout) itemView.findViewById(R.id.constraintlayout_item_episode));
-            statusView = ((ImageView)itemView.findViewById(R.id.imageView_item_episode_status));
-            titleView = ((TextView)itemView.findViewById(R.id.textview_item_episode_title));
-            descriptionView = ((TextView)itemView.findViewById(R.id.textview_item_episode_description));
-            pubDateView = ((TextView)itemView.findViewById(R.id.textview_item_episode_pubdate));
-            durationView = ((TextView)itemView.findViewById(R.id.textview_item_episode_duration));
-            moreView = ((TextView)itemView.findViewById(R.id.textview_item_episode_more));
-            bottomSpaceView = ((Space)itemView.findViewById(R.id.imageview_item_episode_bottomspace));
+            ButterKnife.bind(this, itemView);
 
             View.OnClickListener expandListener = (v) -> {
                 Integer position = getAdapterPosition() - 1; // Because podcast header is always at position 0
@@ -597,22 +590,17 @@ public class EpisodeListFragment extends Fragment {
         }
     }
 
-    private class PodcastHeaderViewHolder extends RecyclerView.ViewHolder {
+    class PodcastHeaderViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView flagView;
-        private View subscribedView;
-        private TextView levelView;
-        private TextView titleView;
-        private ImageView podcastImageView;
+        @BindView(R.id.imageview_item_podcast_header_flag) ImageView flagView;
+        @BindView(R.id.textview_item_podcast_header_subscribed) TextView subscribedView;
+        @BindView(R.id.textview_item_podcast_header_level) TextView levelView;
+        @BindView(R.id.textview_item_podcast_header_title) TextView titleView;
+        @BindView(R.id.imageview_item_podcast_header) ImageView podcastImageView;
 
         PodcastHeaderViewHolder(View itemView, Podcast podcast) {
             super(itemView);
-
-            flagView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_header_flag));
-            subscribedView = itemView.findViewById(R.id.textview_item_podcast_header_subscribed);
-            levelView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_header_level));
-            titleView = ((TextView)itemView.findViewById(R.id.textview_item_podcast_header_title));
-            podcastImageView = ((ImageView)itemView.findViewById(R.id.imageview_item_podcast_header));
+            ButterKnife.bind(this, itemView);
         }
     }
 
