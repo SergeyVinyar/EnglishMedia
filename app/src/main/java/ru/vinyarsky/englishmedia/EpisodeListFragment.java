@@ -559,9 +559,9 @@ public class EpisodeListFragment extends Fragment {
         @BindView(R.id.constraintlayout_item_episode) ConstraintLayout constraintView;
         @BindView(R.id.imageView_item_episode_status) ImageView statusView;
         @BindView(R.id.textview_item_episode_title) TextView titleView;
-        @BindView(R.id.textview_item_episode_description) TextView pubDateView;
-        @BindView(R.id.textview_item_episode_pubdate) TextView durationView;
-        @BindView(R.id.textview_item_episode_duration) TextView descriptionView;
+        @BindView(R.id.textview_item_episode_pubdate) TextView pubDateView;
+        @BindView(R.id.textview_item_episode_duration) TextView durationView;
+        @BindView(R.id.textview_item_episode_description) TextView descriptionView;
         @BindView(R.id.textview_item_episode_more) TextView moreView;
         @BindView(R.id.imageview_item_episode_bottomspace) Space bottomSpaceView;
 
