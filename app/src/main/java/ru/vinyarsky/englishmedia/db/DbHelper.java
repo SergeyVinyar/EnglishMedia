@@ -18,7 +18,7 @@ import ru.vinyarsky.englishmedia.R;
 
 public class DbHelper extends SQLiteOpenHelper {
 
-    private static int DB_VERSION = 1;
+    private static int DB_VERSION = 2;
 
     private Context appContext;
     private SQLiteDatabase database;
