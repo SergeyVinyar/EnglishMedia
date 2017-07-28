@@ -24,6 +24,16 @@ public final class EMApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+//        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+//                .detectLeakedSqlLiteObjects()
+//                .detectLeakedClosableObjects()
+//                .detectLeakedRegistrationObjects()
+//                .penaltyLog()
+//                //.penaltyDeath()
+//                .build()
+//        );
+
         emComponent = DaggerEMComponent.builder()
                 .eMModule(new EMModule(this.getApplicationContext()))
                 .build();

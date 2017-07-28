@@ -5,7 +5,8 @@ import android.content.Context;
 import android.content.res.XmlResourceParser;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
+
+import com.google.firebase.crash.FirebaseCrash;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -17,7 +18,7 @@ import ru.vinyarsky.englishmedia.R;
 
 public class DbHelper extends SQLiteOpenHelper {
 
-    private static int DB_VERSION = 1;
+    private static int DB_VERSION = 2;
 
     private Context appContext;
     private SQLiteDatabase database;
@@ -42,8 +43,12 @@ public class DbHelper extends SQLiteOpenHelper {
         try {
             Podcast.onCreate(db);
             Episode.onCreate(db);
-
             updatePodcastsFromXml(db);
+
+            db.setTransactionSuccessful();
+        }
+        catch (XmlPullParserException | IOException e) {
+            FirebaseCrash.report(e);
         }
         finally {
             db.endTransaction();
@@ -55,72 +60,71 @@ public class DbHelper extends SQLiteOpenHelper {
         db.beginTransaction();
         try {
             updatePodcastsFromXml(db);
+
+            db.setTransactionSuccessful();
+        }
+        catch (XmlPullParserException | IOException e) {
+            FirebaseCrash.report(e);
         }
         finally {
             db.endTransaction();
         }
     }
 
-    private void updatePodcastsFromXml(SQLiteDatabase db) {
-        try {
-            Podcast podcast = null;
-            String lastTag = "";
-            try (XmlResourceParser parser = appContext.getResources().getXml(R.xml.podcasts)) {
-                int eventType = parser.getEventType();
-                while (eventType != XmlPullParser.END_DOCUMENT) {
-                    switch (eventType) {
-                        case XmlPullParser.START_TAG:
-                            lastTag = parser.getName();
-                            if (lastTag.equals("podcast")) {
-                                if (podcast != null)
-                                    updatePodcast(db, podcast);
-                                podcast = new Podcast();
-                                podcast.setSubscribed(false);
+    private void updatePodcastsFromXml(SQLiteDatabase db) throws XmlPullParserException, IOException {
+        Podcast podcast = null;
+        String lastTag = "";
+        try (XmlResourceParser parser = appContext.getResources().getXml(R.xml.podcasts)) {
+            int eventType = parser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        lastTag = parser.getName();
+                        if (lastTag.equals("podcast")) {
+                            if (podcast != null)
+                                updatePodcast(db, podcast);
+                            podcast = new Podcast();
+                            podcast.setSubscribed(false);
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        lastTag = "";
+                        break;
+                    case XmlPullParser.TEXT:
+                        if (!"".equals(lastTag)) {
+                            String value = parser.getText();
+                            switch (lastTag) {
+                                case "code":
+                                    podcast.setCode(UUID.fromString(value));
+                                    break;
+                                case "country":
+                                    podcast.setCountry(Podcast.Country.valueOf(value));
+                                    break;
+                                case "level":
+                                    podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
+                                    break;
+                                case "title":
+                                    podcast.setTitle(value);
+                                    break;
+                                case "description":
+                                    podcast.setDescription(value);
+                                    break;
+                                case "rss_url":
+                                    podcast.setRssUrl(value);
+                                    break;
+                                case "image_src":
+                                    podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value.substring(0, value.lastIndexOf(".")));
+                                    break;
                             }
-                            break;
-                        case XmlPullParser.END_TAG:
-                            lastTag = "";
-                            break;
-                        case XmlPullParser.TEXT:
-                            if (!"".equals(lastTag)) {
-                                String value = parser.getText();
-                                switch (lastTag) {
-                                    case "code":
-                                        podcast.setCode(UUID.fromString(value));
-                                        break;
-                                    case "country":
-                                        podcast.setCountry(Podcast.Country.valueOf(value));
-                                        break;
-                                    case "level":
-                                        podcast.setLevel(Podcast.PodcastLevel.valueOf(value));
-                                        break;
-                                    case "title":
-                                        podcast.setTitle(value);
-                                        break;
-                                    case "description":
-                                        podcast.setDescription(value);
-                                        break;
-                                    case "rss_url":
-                                        podcast.setRssUrl(value);
-                                        break;
-                                    case "image_src":
-                                        podcast.setImagePath(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + appContext.getPackageName() + "/raw/" + value.substring(0, value.lastIndexOf(".")));
-                                        break;
-                                }
-                            }
-                            break;
-                    }
-                    parser.next();
-                    eventType = parser.getEventType();
+                        }
+                        break;
                 }
+                parser.next();
+                eventType = parser.getEventType();
             }
-            if (podcast != null)
-                updatePodcast(db, podcast);
-
-            db.setTransactionSuccessful();
-        } catch (XmlPullParserException | IOException e) {
-            Log.e("DbHelper", "onCreate", e);
         }
+        if (podcast != null)
+            updatePodcast(db, podcast);
     }
 
     private void updatePodcast(SQLiteDatabase db, Podcast podcast) {

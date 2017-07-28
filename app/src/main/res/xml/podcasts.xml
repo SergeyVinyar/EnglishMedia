@@ -269,4 +269,41 @@ Learn English. Learn English vocabulary. Learn about American culture. </descrip
         <rss_url>http://learningenglish.voanews.com/podcast/?count=50&amp;zoneId=986</rss_url>
         <image_src>pod_0c6063f2_f3e7_4925_97b6_1345c4e3c833.jpg</image_src>
     </podcast>
+    <podcast>
+        <code>f1d6bce3-02cb-4138-85c5-730b49057f72</code>
+        <country>US</country>
+        <level>BEGINNER</level>
+        <title>Culips ESL Podcast</title>
+        <description>Learn conversational English for everyday use! We teach you English the way native speakers really use it in everyday conversation, show you how to use natural English idioms, expressions. Listen to our amazing audio episodes and improve your fluency, comprehension, vocabulary, and understanding of common English expressions!</description>
+        <rss_url>https://esl.culips.com/feed/podcast/</rss_url>
+        <image_src>pod_culips_cover.png</image_src>
+    </podcast>
+    <podcast>
+        <code>c9adea56-cc05-4a58-8242-442155824e1f</code>
+        <country>UK</country>
+        <level>ADVANCED</level>
+        <title>Discovery</title>
+        <description>Explorations in the world of science.</description>
+        <rss_url>https://podcasts.files.bbci.co.uk/p002w557.rss</rss_url>
+        <image_src>pod_p02h1mcg.jpg</image_src>
+    </podcast>
+    <podcast>
+        <code>cf49afca-9632-4a52-bd09-6071e5bc9787</code>
+        <country>UK</country>
+        <level>ADVANCED</level>
+        <title>Business Daily</title>
+        <description>The daily drama of money and work from the BBC.</description>
+        <rss_url>https://podcasts.files.bbci.co.uk/p002vsxs.rss</rss_url>
+        <image_src>pod_p03dkw4s.jpg</image_src>
+    </podcast>
+    <podcast>
+        <code>3b7968fc-6010-49f8-803c-01ae5bfb43f5</code>
+        <country>UK</country>
+        <level>INTERMEDIATE</level>
+        <title>6 Minute Vocabulary</title>
+        <description>Build your English vocabulary in six minutes.
+Every Monday join two of our presenters and hear about different ways to develop your vocabulary knowledge and skills.</description>
+        <rss_url>https://podcasts.files.bbci.co.uk/p02pc9xz.rss</rss_url>
+        <image_src>pod_p02r9cfw.jpg</image_src>
+    </podcast>
 </podcasts>
