@@ -18,7 +18,7 @@
         android:layout_marginStart="16dp"
         android:background="@android:color/darker_gray" />
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintlayout_item_podcast"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -86,7 +86,7 @@
             app:layout_constraintRight_toLeftOf="@+id/guideline_item_podcast_middle"
             app:layout_constraintTop_toBottomOf="@+id/textview_item_podcast_title" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_item_podcast_middle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -95,7 +95,7 @@
             tools:layout_editor_absoluteX="253dp"
             tools:layout_editor_absoluteY="0dp" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_item_podcast_right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -104,7 +104,7 @@
             tools:layout_editor_absoluteX="352dp"
             tools:layout_editor_absoluteY="0dp" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_item_podcast_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -154,7 +154,7 @@
             app:layout_constraintLeft_toLeftOf="@+id/guideline_item_podcast_left"
             app:layout_constraintTop_toBottomOf="@+id/textview_item_podcast_description" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Space
         android:id="@+id/imageview_item_podcast_bottomspace"

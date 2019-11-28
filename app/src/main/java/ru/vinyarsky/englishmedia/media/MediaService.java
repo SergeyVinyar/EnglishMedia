@@ -1,6 +1,8 @@
 package ru.vinyarsky.englishmedia.media;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,12 +11,14 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.ui.PlaybackControlView;
+import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.google.android.exoplayer2.ControlDispatcher;
 
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -44,6 +48,8 @@ public class MediaService extends Service {
     public static final String EPISODE_CODE_EXTRA = "episode_code";
     public static final String EPISODE_URL_EXTRA = "episode_url";
 
+    public static final String CHANNEL_ID = "common_channel";
+
     private Player player;
     private DbHelper dbHelper;
 
@@ -52,12 +58,6 @@ public class MediaService extends Service {
     private final MediaServiceEventManagerImpl mediaServiceEventManager = new MediaServiceEventManagerImpl();
 
     private LocalBroadcastManager broadcastManager;
-
-    public MediaService() {
-        super();
-        this.player = EMApplication.getMediaComponent().getPlayer();
-        this.dbHelper = EMApplication.getEmComponent().getDbHelper();
-    }
 
     public static Intent newPlayPauseToggleIntent(Context appContext, UUID episodeCode) {
         Intent intent = new Intent(PLAY_PAUSE_TOGGLE_ACTION, null, appContext, MediaService.class);
@@ -74,6 +74,10 @@ public class MediaService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        this.player = EMApplication.getMediaComponent().getPlayer();
+        this.dbHelper = EMApplication.getEmComponent().getDbHelper();
+
         this.compositeDisposable = new CompositeDisposable();
         this.broadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
         this.player.addListener(this.playerListener);
@@ -205,7 +209,16 @@ public class MediaService extends Service {
             Uri playingUrl = MediaService.this.player.getPlayingUrl();
             registerReceiver(MediaService.this.becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
-            Notification notification = new Notification.Builder(MediaService.this)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                CharSequence name = getString(R.string.media_service_notification_channel_title);
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+            }
+            Notification notification = new NotificationCompat.Builder(MediaService.this, CHANNEL_ID)
                     .setSmallIcon(R.mipmap.ic_notification)
                     .setContentTitle(getResources().getString(R.string.media_service_notification_title))
                     .build();
@@ -265,9 +278,9 @@ public class MediaService extends Service {
     private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Disconnecting headphones - stop playback
+            // Disconnecting headphones - stopIt playback
             if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-                player.stop();
+                player.stopIt();
             }
         }
     };
@@ -277,18 +290,33 @@ public class MediaService extends Service {
         public void mountPlaybackControlView(EMPlaybackControlView view) {
             view.setPlayer(MediaService.this.player.asExoPlayer());
             view.setMediaServiceEventManager(MediaService.this.mediaServiceEventManager);
-            view.setControlDispatcher(new PlaybackControlView.ControlDispatcher() {
+            view.setControlDispatcher(new ControlDispatcher() {
 
                 @Override
-                public boolean dispatchSetPlayWhenReady(ExoPlayer player, boolean playWhenReady) {
+                public boolean dispatchSetPlayWhenReady(com.google.android.exoplayer2.Player player, boolean playWhenReady) {
                     MediaService.this.player.togglePlayStop();
                     return true;
                 }
 
                 @Override
-                public boolean dispatchSeekTo(ExoPlayer player, int windowIndex, long positionMs) {
+                public boolean dispatchSeekTo(com.google.android.exoplayer2.Player player, int windowIndex, long positionMs) {
                     MediaService.this.player.asExoPlayer().seekTo(windowIndex, positionMs);
                     return true;
+                }
+
+                @Override
+                public boolean dispatchSetRepeatMode(com.google.android.exoplayer2.Player player, int repeatMode) {
+                    return false;
+                }
+
+                @Override
+                public boolean dispatchSetShuffleModeEnabled(com.google.android.exoplayer2.Player player, boolean shuffleModeEnabled) {
+                    return false;
+                }
+
+                @Override
+                public boolean dispatchStop(com.google.android.exoplayer2.Player player, boolean reset) {
+                    return false;
                 }
             });
         }

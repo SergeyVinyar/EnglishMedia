@@ -2,13 +2,13 @@ package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.util.ArraySet;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.fragment.app.Fragment;
+import androidx.collection.ArraySet;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -179,25 +179,25 @@ public class PodcastListFragment extends Fragment {
 
             switch (podcast.getCountry()) {
                 case UK:
-                    Picasso.with(getContext())
+                    Picasso.get()
                             .load(R.drawable.flag_uk)
                             .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
                     break;
                 case US:
-                    Picasso.with(getContext())
+                    Picasso.get()
                             .load(R.drawable.flag_us)
                             .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
                     break;
                 case CZ:
-                    Picasso.with(getContext())
+                    Picasso.get()
                             .load(R.drawable.flag_cz)
                             .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
                     break;
                 case DK:
-                    Picasso.with(getContext())
+                    Picasso.get()
                             .load(R.drawable.flag_dk)
                             .into(holder.flagView);
                     holder.flagView.setVisibility(View.VISIBLE);
@@ -251,7 +251,7 @@ public class PodcastListFragment extends Fragment {
                 }
             });
 
-            Picasso.with(getContext())
+            Picasso.get()
                     .load(podcast.getImagePath())
                     .into(holder.podcastImageView);
 

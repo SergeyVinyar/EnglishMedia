@@ -9,19 +9,19 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.util.ArraySet;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.collection.ArraySet;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -387,25 +387,25 @@ public class EpisodeListFragment extends Fragment {
 
                 switch (podcast.getCountry()) {
                     case UK:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.flag_uk)
                                 .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
                         break;
                     case US:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.flag_us)
                                 .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
                         break;
                     case CZ:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.flag_cz)
                                 .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
                         break;
                     case DK:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.flag_dk)
                                 .into(podcastHeaderViewHolder.flagView);
                         podcastHeaderViewHolder.flagView.setVisibility(View.VISIBLE);
@@ -457,13 +457,13 @@ public class EpisodeListFragment extends Fragment {
 
                 switch (episode.getStatus()) {
                     case NEW:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.episode_status_new)
                                 .into(episodeViewHolder.statusView);
                         episodeViewHolder.statusView.setVisibility(View.VISIBLE);
                         break;
                     case LISTENING:
-                        Picasso.with(getContext())
+                        Picasso.get()
                                 .load(R.drawable.episode_status_listening)
                                 .into(episodeViewHolder.statusView);
                         episodeViewHolder.statusView.setVisibility(View.VISIBLE);

@@ -7,6 +7,7 @@
     <string name="main_navigation_drawer_open">Open navigation drawer</string>
     <string name="main_navigation_drawer_close">Close navigation drawer</string>
 
+    <string name="media_service_notification_channel_title">Playback notifications</string>
     <string name="media_service_notification_title">EnglishMedia playback</string>
 
     <string name="main_activity_content_not_found">Cannot find an audio file on the Internet</string>

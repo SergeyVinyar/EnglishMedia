@@ -4,8 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
@@ -47,14 +47,16 @@ public class PlayerImplTest {
 
     @Before
     public void before() {
-        testAppContext = InstrumentationRegistry.getContext();
-        targetContext = InstrumentationRegistry.getTargetContext();
+        testAppContext = InstrumentationRegistry.getInstrumentation().getContext();
+        targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
     }
 
     @After
     public void after() throws Exception {
         runAsyncAndWait(() -> {
-            player.release();
+            if (player != null) {
+                player.release();
+            }
         });
     }
 
@@ -81,7 +83,7 @@ public class PlayerImplTest {
         OkHttpClient httpClient = mock(OkHttpClient.class);
 
         when(httpClient.newCall(any(Request.class))).then(args -> {
-            Request request = args.getArgumentAt(0, Request.class);
+            Request request = args.getArgument(0);
 
             InputStream data = testAppContext.getResources().getAssets().open("test.mp3");
             Response response = new Response.Builder()
@@ -122,12 +124,13 @@ public class PlayerImplTest {
         OkHttpClient httpClient = mock(OkHttpClient.class);
 
         when(httpClient.newCall(any(Request.class))).then(args -> {
-            Request request = args.getArgumentAt(0, Request.class);
+            Request request = args.getArgument(0);
 
             Response response = new Response.Builder()
                     .request(request)
                     .protocol(Protocol.HTTP_1_1)
                     .code(404)
+                    .message("Content not found")
                     .body(new ResponseBody() {
                         @Override
                         public MediaType contentType() {
@@ -169,7 +172,7 @@ public class PlayerImplTest {
     }
 
     /**
-     * Normal playback start and stop
+     * Normal playback start and stopIt
      */
     @Test
     public void playAndStop() throws Exception {
@@ -205,7 +208,7 @@ public class PlayerImplTest {
         assertEquals(args.size(), args.stream().distinct().count());
 
         runAsyncAndWait(() -> {
-            player.stop();
+            player.stopIt();
         });
 
         verify(playerListener).onStop(anyInt());
@@ -240,7 +243,7 @@ public class PlayerImplTest {
         verify(playerListener).onPlay();
 
         runAsyncAndWait(() -> {
-            player.stop();
+            player.stopIt();
         });
 
         Thread.sleep(10 * 1000);
@@ -261,7 +264,7 @@ public class PlayerImplTest {
         verify(playerListener, never()).onCompleted();
 
         runAsyncAndWait(() -> {
-            player.stop();
+            player.stopIt();
         });
 
         assertEquals(url2, player.getPlayingUrl());
@@ -308,7 +311,7 @@ public class PlayerImplTest {
         verify(playerListener).onCompleted();
 
         runAsyncAndWait(() -> {
-            player.stop();
+            player.stopIt();
         });
 
         assertEquals(url2, player.getPlayingUrl());

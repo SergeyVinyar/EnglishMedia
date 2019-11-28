@@ -18,7 +18,7 @@
         android:layout_marginStart="16dp"
         android:background="@android:color/darker_gray" />
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintlayout_item_episode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -83,7 +83,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             android:layout_marginTop="8dp" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/guideline_item_episode_right"
@@ -92,7 +92,7 @@
             tools:layout_editor_absoluteY="0dp"
             tools:layout_editor_absoluteX="368dp" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_item_episode_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -133,7 +133,7 @@
             app:srcCompat="@drawable/episode_point"
             app:layout_constraintVertical_bias="0.571" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Space
         android:id="@+id/imageview_item_episode_bottomspace"

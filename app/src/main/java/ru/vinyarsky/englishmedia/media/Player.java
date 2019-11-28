@@ -1,14 +1,14 @@
 package ru.vinyarsky.englishmedia.media;
 
 import android.net.Uri;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.ExoPlayer;
 
 public interface Player {
 
     void play(Uri url, int startFromPositionSec);
-    void stop();
+    void stopIt();
     void togglePlayStop();
 
     @Nullable

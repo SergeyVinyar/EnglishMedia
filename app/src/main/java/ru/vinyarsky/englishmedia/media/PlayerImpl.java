@@ -3,22 +3,20 @@ package ru.vinyarsky.englishmedia.media;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
-import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.upstream.cache.Cache;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
@@ -50,7 +48,8 @@ import okhttp3.OkHttpClient;
     private Handler handler = new Handler();
 
     PlayerImpl(Context context, AudioFocus audioFocus, OkHttpClient httpClient) {
-        super(new DefaultRenderersFactory(context), new DefaultTrackSelector(), new DefaultLoadControl());
+        super(context, new DefaultRenderersFactory(context), new DefaultTrackSelector(), new DefaultLoadControl(),
+                new DefaultBandwidthMeter.Builder(context).build(), null, Looper.getMainLooper());
         this.setPlayWhenReady(false);
         this.addListener(this.exoPlayerListener);
 
@@ -58,7 +57,7 @@ import okhttp3.OkHttpClient;
         audioFocus.addListener(this.audioFocusListener);
 
         Cache cache = new SimpleCache(new File(context.getCacheDir().getAbsolutePath() + "/exoplayer"), new LeastRecentlyUsedCacheEvictor(1024 * 1024 * 100)); // 100 Mb max
-        DataSource.Factory httpDataSourceFactory = new OkHttpDataSourceFactory(httpClient, Util.getUserAgent(context, "EnglishMedia"), null);
+        DataSource.Factory httpDataSourceFactory = new OkHttpDataSourceFactory(httpClient, Util.getUserAgent(context, "EnglishMedia"));
         this.dataSourceFactory = new CacheDataSourceFactory(cache, httpDataSourceFactory, CacheDataSource.FLAG_BLOCK_ON_CACHE | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
         this.extractorsFactory = new DefaultExtractorsFactory();
     }
@@ -84,7 +83,7 @@ import okhttp3.OkHttpClient;
     }
 
     @Override
-    public void stop() {
+    public void stopIt() {
         setPlayWhenReady(false);
         this.audioFocus.abandonAudioFocus();
         this.playerEventEmitter.onStop((int) getCurrentPosition() / 1000);
@@ -95,7 +94,7 @@ import okhttp3.OkHttpClient;
     public void togglePlayStop() {
         if (this.playingUrl != null) {
             if (getPlayWhenReady())
-                stop();
+                stopIt();
             else
                 play(this.playingUrl, Integer.MAX_VALUE);
         }
@@ -153,24 +152,9 @@ import okhttp3.OkHttpClient;
     private ExoPlayer.EventListener exoPlayerListener = new EventListener() {
 
         @Override
-        public void onTimelineChanged(Timeline timeline, Object manifest) {
-            // Do nothing
-        }
-
-        @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-            // Do nothing
-        }
-
-        @Override
-        public void onLoadingChanged(boolean isLoading) {
-            // Do nothing
-        }
-
-        @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             if (playWhenReady && playbackState == ExoPlayer.STATE_ENDED) {
-                PlayerImpl.this.stop();
+                PlayerImpl.this.stopIt();
                 PlayerImpl.this.playerEventEmitter.onCompleted();
                 PlayerImpl.this.playingUrl = null;
                 PlayerImpl.super.stop();
@@ -182,20 +166,10 @@ import okhttp3.OkHttpClient;
 
         @Override
         public void onPlayerError(ExoPlaybackException error) {
-            PlayerImpl.this.stop();
+            PlayerImpl.this.stopIt();
             PlayerImpl.this.playerEventEmitter.onResetDueError();
             PlayerImpl.this.playingUrl = null;
             PlayerImpl.super.stop();
-        }
-
-        @Override
-        public void onPositionDiscontinuity() {
-            // Do nothing
-        }
-
-        @Override
-        public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-            // Do nothing
         }
     };
 

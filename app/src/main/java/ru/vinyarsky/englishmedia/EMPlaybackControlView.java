@@ -1,7 +1,7 @@
 package ru.vinyarsky.englishmedia;
 
 import android.content.Context;
-import android.support.design.widget.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
