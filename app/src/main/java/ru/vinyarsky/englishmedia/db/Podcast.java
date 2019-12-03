@@ -70,7 +70,7 @@ public final class Podcast {
     }
 
     /**
-     * Returns Podcast item by Code
+     * Returns PodcastEntity item by Code
      * @return null if not found
      */
     public static Podcast read(DbHelper dbHelper, UUID code) {
@@ -78,7 +78,7 @@ public final class Podcast {
     }
 
     /**
-     * Returns Podcast item by Code
+     * Returns PodcastEntity item by Code
      * @return null if not found
      */
     /* package */ static Podcast read(SQLiteDatabase db, UUID code) {

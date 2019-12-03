@@ -24,7 +24,7 @@ public class DbHelper extends SQLiteOpenHelper {
     private SQLiteDatabase database;
 
     public DbHelper(Context appContext) {
-        super(appContext, "data", null, DB_VERSION);
+        super(appContext, "ru/vinyarsky/englishmedia/data", null, DB_VERSION);
         this.appContext = appContext;
     }
 

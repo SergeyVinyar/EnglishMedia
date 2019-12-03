@@ -195,7 +195,7 @@ public class EpisodeListFragment extends Fragment {
 
             mListener.showProgress();
             try {
-                // Podcast.read
+                // PodcastEntity.read
                 Observable<Podcast> podcastObservable = Observable.just(podcastCode)
                         .map((code) -> Podcast.read(EpisodeListFragment.this.dbHelper, code));
 
@@ -382,7 +382,7 @@ public class EpisodeListFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            if (position == 0) { // Podcast header
+            if (position == 0) { // PodcastEntity header
                 PodcastHeaderViewHolder podcastHeaderViewHolder = (PodcastHeaderViewHolder) holder;
 
                 switch (podcast.getCountry()) {
