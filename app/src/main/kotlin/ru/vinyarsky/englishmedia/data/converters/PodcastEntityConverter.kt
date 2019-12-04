@@ -16,7 +16,7 @@ class PodcastEntityConverter : Converter<PodcastEntity, Podcast> {
             try {
                 Podcast(
                         UUID.fromString(source.code),
-                        source.country?.let { Country.valueOf(it) },
+                        source.country?.let { Country.valueOf(it) } ?: Country.NONE,
                         PodcastLevel.valueOf(source.level),
                         source.title,
                         source.description,
@@ -32,7 +32,7 @@ class PodcastEntityConverter : Converter<PodcastEntity, Podcast> {
             try {
                 PodcastEntity(
                         source.code.toString(),
-                        source.country?.toString() ?: Country.NONE.toString(),
+                        source.country.toString(),
                         source.level.toString(),
                         source.title,
                         source.description,

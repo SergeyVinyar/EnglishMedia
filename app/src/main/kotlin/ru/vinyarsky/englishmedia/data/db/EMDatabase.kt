@@ -4,12 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import ru.vinyarsky.englishmedia.models.data.db.EpisodeEntity
 import ru.vinyarsky.englishmedia.models.data.db.PodcastEntity
 
 /**
  * Room database object
  */
-@Database(entities = arrayOf(PodcastEntity::class), version = 2)
+@Database(entities = arrayOf(PodcastEntity::class, EpisodeEntity::class), version = 2)
 abstract class EMDatabase : RoomDatabase() {
 
     abstract fun getPoscastDao(): PodcastDao

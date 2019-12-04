@@ -3,7 +3,7 @@ package ru.vinyarsky.englishmedia.models.domain
 import java.util.*
 
 /**
- * Podcast's episode domain model
+ * Episode domain model
  *
  * @property code Unique identifier
  * @property podcastCode Unique identifier of a podcast, this episode belongs to
@@ -25,6 +25,6 @@ data class Episode(val code: UUID,
                    val pageUrl: String?,
                    val contentUrl: String,
                    val durationSec: Int,
-                   val pubDate: Date?,
+                   val pubDate: Date,
                    val status: EpisodeStatus,
                    val currentPositionSec: Int)

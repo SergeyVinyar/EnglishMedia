@@ -21,7 +21,7 @@ class EpisodeEntityConverter : Converter<EpisodeEntity, Episode> {
                         source.pageUrl,
                         source.contentUrl,
                         source.duration,
-                        source.pubDate?.let { Date(it) },
+                        source.pubDate?.let { Date(it) } ?: Date(),
                         EpisodeStatus.valueOf(source.status),
                         source.currentPosition)
             } catch (e: IllegalArgumentException) {
@@ -40,7 +40,7 @@ class EpisodeEntityConverter : Converter<EpisodeEntity, Episode> {
                         source.pageUrl,
                         source.contentUrl,
                         source.durationSec,
-                        source.pubDate?.time,
+                        source.pubDate.time,
                         source.status.toString(),
                         source.currentPositionSec)
             } catch (e: IllegalArgumentException) {

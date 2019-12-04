@@ -15,7 +15,7 @@ import java.util.*
  * @property subscribed Flag of subscription (not implemented yet)
  */
 data class Podcast(val code: UUID,
-                   val country: Country?,
+                   val country: Country,
                    val level: PodcastLevel,
                    val title: String,
                    val description: String?,
