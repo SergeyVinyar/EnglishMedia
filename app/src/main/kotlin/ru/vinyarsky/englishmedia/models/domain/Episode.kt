@@ -1,5 +1,6 @@
 package ru.vinyarsky.englishmedia.models.domain
 
+import android.net.Uri
 import java.util.*
 
 /**
@@ -22,8 +23,8 @@ data class Episode(val code: UUID,
                    val episodeGuid: UUID,
                    val title: String?,
                    val description: String?,
-                   val pageUrl: String?,
-                   val contentUrl: String,
+                   val pageUrl: Uri?,
+                   val contentUrl: Uri,
                    val durationSec: Int,
                    val pubDate: Date,
                    val status: EpisodeStatus,

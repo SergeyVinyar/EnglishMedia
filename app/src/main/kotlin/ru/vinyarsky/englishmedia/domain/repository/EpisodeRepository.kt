@@ -41,10 +41,11 @@ interface EpisodeRepository {
     suspend fun updatePosition(code: UUID, newPositionSec: Int)
 
     /**
-     * Updates a listening status
+     * Updates a listening status (with a bit of logic)
      *
      * @param code Episode identifier
      * @param newStatus New listening status
+     * @return true if status was actually changed
      */
-    suspend fun updateStatus(code: UUID, newStatus: EpisodeStatus)
+    suspend fun updateStatusIfRequired(code: UUID, newStatus: EpisodeStatus): Boolean
 }

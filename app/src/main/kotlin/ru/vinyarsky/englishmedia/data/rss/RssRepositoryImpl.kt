@@ -1,5 +1,6 @@
 package ru.vinyarsky.englishmedia.data.rss
 
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -23,7 +24,7 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
 
     override suspend fun fetchEpisodes(podcast: Podcast): ClosableSequence<Episode> = withContext(Dispatchers.Default) {
         val request = Request.Builder()
-                .url(podcast.rssUrl)
+                .url(podcast.rssUrl.toString())
                 .build()
 
         httpClient.newCall(request).execute().use {
@@ -49,9 +50,14 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
                             continue
                         if ("item" != parser.name)
                             continue
-                        val episode = parseOneEpisode(podcast)
-                        if (episode != null) {
-                            yield(episode!!)
+                        try {
+                            val episode = parseOneEpisode(podcast)
+                            if (episode != null) {
+                                yield(episode!!)
+                            }
+                        } catch (e: IllegalArgumentException) {
+                            // UUID.fromString failed
+                            //FirebaseCrash.report(e)
                         }
                     }
                 } else {
@@ -77,7 +83,7 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
         var pageUrl: String? = null
         var contentUrl: String? = null
         var duration: Int = 0
-        var publishDate: Date = Date()
+        var pubDate: Date = Date()
 
         var currentTag = ""
         while (!(parser.next() == XmlPullParser.END_TAG && "item" == parser.name)) {
@@ -102,10 +108,10 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
                     }
                     "pubDate" -> {
                         try {
-                            publishDate = dateFormatYYYY.parse(value)
+                            pubDate = dateFormatYYYY.parse(value)
                         } catch (e1: ParseException) {
                             try {
-                                publishDate = dateFormatYY.parse(value)
+                                pubDate = dateFormatYY.parse(value)
                             } catch (e2: ParseException) {
                             }
                         }
@@ -124,8 +130,8 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
             }
         }
 
-        if (episodeGuid != null && title != null && description != null && pageUrl != null && contentUrl != null) {
-            return Episode(UUID.randomUUID(), podcast.code, episodeGuid, title, description, pageUrl, contentUrl, duration, publishDate, EpisodeStatus.NEW, 0)
+        if (episodeGuid != null && title != null && description != null && contentUrl != null) {
+            return Episode(UUID.randomUUID(), podcast.code, episodeGuid, title, description, pageUrl?.let { Uri.parse(it) }, Uri.parse(contentUrl), duration, pubDate, EpisodeStatus.NEW, 0)
         } else {
             return null
         }

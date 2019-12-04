@@ -1,5 +1,6 @@
 package ru.vinyarsky.englishmedia.data.converters
 
+import android.net.Uri
 import ru.vinyarsky.englishmedia.core.Converter
 import ru.vinyarsky.englishmedia.models.data.db.PodcastEntity
 import ru.vinyarsky.englishmedia.models.domain.Country
@@ -21,7 +22,7 @@ class PodcastEntityConverter : Converter<PodcastEntity, Podcast> {
                         source.title,
                         source.description,
                         source.imagePath,
-                        source.rssUrl,
+                        Uri.parse(source.rssUrl),
                         source.subscribed != 0)
             } catch (e: IllegalArgumentException) {
                 // Parsing failed
@@ -37,7 +38,7 @@ class PodcastEntityConverter : Converter<PodcastEntity, Podcast> {
                         source.title,
                         source.description,
                         source.imagePath,
-                        source.rssUrl,
+                        source.rssUrl.toString(),
                         if (source.subscribed) 1 else 0)
             } catch (e: IllegalArgumentException) {
                 // Parsing failed

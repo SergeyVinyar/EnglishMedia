@@ -46,7 +46,18 @@ class EpisodeRepositoryImpl(private val database: EMDatabase,
         episodeDao.updatePosition(code.toString(), newPositionSec)
     }
 
-    override suspend fun updateStatus(code: UUID, newStatus: EpisodeStatus) = withContext(Dispatchers.Default) {
-        episodeDao.updateStatus(code.toString(), newStatus.toString())
+    override suspend fun updateStatusIfRequired(code: UUID, newStatus: EpisodeStatus): Boolean = withContext(Dispatchers.Default) {
+        // Completed status is a final one - no further changing allowed
+        val codeAsString = code.toString()
+        val newStatusAsString = newStatus.toString()
+        database.withTransaction {
+            val currentStatus = episodeDao.getStatus(codeAsString)
+            if (newStatusAsString != currentStatus && currentStatus != EpisodeStatus.COMPLETED.toString()) {
+                episodeDao.updateStatus(code.toString(), newStatusAsString)
+                true
+            } else {
+                false
+            }
+        }
     }
 }

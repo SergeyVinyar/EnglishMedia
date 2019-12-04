@@ -1,5 +1,6 @@
 package ru.vinyarsky.englishmedia.data.converters
 
+import android.net.Uri
 import ru.vinyarsky.englishmedia.core.Converter
 import ru.vinyarsky.englishmedia.models.data.db.EpisodeEntity
 import ru.vinyarsky.englishmedia.models.domain.*
@@ -18,8 +19,8 @@ class EpisodeEntityConverter : Converter<EpisodeEntity, Episode> {
                         UUID.fromString(source.episodeGuid),
                         source.title,
                         source.description,
-                        source.pageUrl,
-                        source.contentUrl,
+                        source.pageUrl?.let { Uri.parse(it) },
+                        Uri.parse(source.contentUrl),
                         source.duration,
                         source.pubDate?.let { Date(it) } ?: Date(),
                         EpisodeStatus.valueOf(source.status),
@@ -37,8 +38,8 @@ class EpisodeEntityConverter : Converter<EpisodeEntity, Episode> {
                         source.episodeGuid.toString(),
                         source.title,
                         source.description,
-                        source.pageUrl,
-                        source.contentUrl,
+                        source.pageUrl?.toString(),
+                        source.contentUrl.toString(),
                         source.durationSec,
                         source.pubDate.time,
                         source.status.toString(),

@@ -6,12 +6,14 @@ import android.content.Intent
 import android.os.IBinder
 import ru.vinyarsky.englishmedia.domain.gateways.PlayerGateway
 
+// TODO Temporary solution. It's gonna be cozy home for MediaSession in the future.
 class MediaService : Service() {
 
     private lateinit var playerGateway: PlayerGateway
 
     override fun onCreate() {
         super.onCreate()
+        // TODO Switch to foreground
     }
 
     override fun onBind(intent: Intent?): IBinder? {

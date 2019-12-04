@@ -1,5 +1,6 @@
 package ru.vinyarsky.englishmedia.models.domain
 
+import android.net.Uri
 import java.util.*
 
 /**
@@ -20,5 +21,5 @@ data class Podcast(val code: UUID,
                    val title: String,
                    val description: String?,
                    val imagePath: String?,
-                   val rssUrl: String,
+                   val rssUrl: Uri,
                    val subscribed: Boolean)

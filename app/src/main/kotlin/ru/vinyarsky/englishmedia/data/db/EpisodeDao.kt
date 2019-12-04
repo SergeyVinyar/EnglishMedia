@@ -63,4 +63,12 @@ interface EpisodeDao {
      */
     @Query("UPDATE Episodes SET status = :newStatus WHERE code = :code")
     suspend fun updateStatus(code: String, newStatus: String)
+
+    /**
+     * Get status of an episode
+     *
+     * @param code Episode identifier
+     */
+    @Query("SELECT status FROM Episodes WHERE code = :code")
+    suspend fun getStatus(code: String): String
 }
