@@ -4,6 +4,18 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * Podcast database entity
+ *
+ * @property code Unique identifier
+ * @property country Origin country of a podcast
+ * @property level Level of difficulty
+ * @property title Title
+ * @property description Description
+ * @property imagePath Logo image
+ * @property rssUrl RSS feed URL
+ * @property subscribed Flag of subscription (not implemented yet)
+ */
 @Entity(tableName = "Podcasts")
 data class PodcastEntity(
         @PrimaryKey

@@ -1,7 +1,11 @@
 package ru.vinyarsky.englishmedia.models.domain
 
-enum class PodcastLevel{
+/**
+ * Level of difficulty
+ */
+enum class PodcastLevel {
 
-    BEGINNER, INTERMEDIATE, ADVANCED;
-
+    BEGINNER,
+    INTERMEDIATE,
+    ADVANCED;
 }

@@ -6,10 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import ru.vinyarsky.englishmedia.models.data.db.PodcastEntity
 
+/**
+ * Room database object
+ */
 @Database(entities = arrayOf(PodcastEntity::class), version = 2)
 abstract class EMDatabase : RoomDatabase() {
 
     abstract fun getPoscastDao(): PodcastDao
+    abstract fun getEpisodeDao(): EpisodeDao
 
     companion object {
 
@@ -25,9 +29,9 @@ abstract class EMDatabase : RoomDatabase() {
                     }
                 }
             }
-            return INSTANCE
+            return INSTANCE!!
         }
 
-        private lateinit var INSTANCE: EMDatabase
+        private var INSTANCE: EMDatabase? = null
     }
 }

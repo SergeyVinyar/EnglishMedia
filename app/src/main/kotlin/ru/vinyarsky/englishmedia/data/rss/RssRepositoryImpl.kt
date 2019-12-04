@@ -29,14 +29,14 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
         httpClient.newCall(request).execute().use {
             val body = it.body
             if (it.isSuccessful && body != null) {
-                parse(body)
+                parse(body, podcast)
             } else {
                 emptySequence()
             }.asClosable { parser.setInput(null) }
         }
     }
 
-    private fun parse(body: ResponseBody): Sequence<Episode> {
+    private fun parse(body: ResponseBody, podcast: Podcast): Sequence<Episode> {
         parser.setInput(body.charStream())
         parser.next()
 
@@ -49,7 +49,7 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
                             continue
                         if ("item" != parser.name)
                             continue
-                        val episode = parseOneEpisode()
+                        val episode = parseOneEpisode(podcast)
                         if (episode != null) {
                             yield(episode!!)
                         }
@@ -65,13 +65,13 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
         }
     }
 
-    private fun parseOneEpisode(): Episode? {
+    private fun parseOneEpisode(podcast: Podcast): Episode? {
         parser.require(XmlPullParser.START_TAG, null, "item")
 
         val dateFormatYYYY = SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.US)
         val dateFormatYY = SimpleDateFormat("E, dd MMM yy HH:mm:ss z", Locale.US)
 
-        var code: UUID? = null
+        var episodeGuid: UUID? = null
         var title: String? = null
         var description: String? = null
         var pageUrl: String? = null
@@ -96,7 +96,7 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
                     "description" -> description = value
                     "guid" -> {
                         try {
-                            code = UUID.fromString(value)
+                            episodeGuid = UUID.fromString(value)
                         } catch (e: IllegalArgumentException) {
                         }
                     }
@@ -124,8 +124,8 @@ class RssRepositoryImpl(private val httpClient: OkHttpClient,
             }
         }
 
-        if (code != null && title != null && description != null && pageUrl != null && contentUrl != null) {
-            return Episode(code, title, description, pageUrl, contentUrl, duration, publishDate, EpisodeStatus.NEW, 0)
+        if (episodeGuid != null && title != null && description != null && pageUrl != null && contentUrl != null) {
+            return Episode(UUID.randomUUID(), podcast.code, episodeGuid, title, description, pageUrl, contentUrl, duration, publishDate, EpisodeStatus.NEW, 0)
         } else {
             return null
         }
